@@ -1,0 +1,72 @@
+name: Reportar un error
+description: Algo de Havi Hub no funciona como debería.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por avisar. Puedes escribir en español o en inglés.
+        Si se trata de un problema de seguridad, no lo publiques aquí: sigue la [política de seguridad](https://github.com/havihub/HaviHub/security/policy).
+  - type: textarea
+    id: what
+    attributes:
+      label: Qué pasó
+      description: Qué estabas haciendo, qué pasó y qué esperabas que pasara. Si apareció un mensaje de error, cópialo tal cual o adjunta una captura de pantalla.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Cómo hacer que vuelva a pasar
+      description: Si los sabes, los pasos desde que abres Havi Hub.
+      placeholder: |
+        1. Abrir el perfil
+        2. ...
+  - type: input
+    id: version
+    attributes:
+      label: Versión de Havi Hub
+      description: Aparece en Ajustes, abajo a la izquierda (por ejemplo, «v. 1.0.0 · instalada»).
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Cómo lo instalaste
+      options:
+        - Instalador de Windows (Setup.exe)
+        - Windows portable (.exe o .zip)
+        - AppImage de Linux
+        - Paquete .deb de Linux
+        - Compilado desde el código
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Sistema operativo
+      placeholder: "Windows 11 24H2 / Ubuntu 24.04 (Wayland) / Arch Linux"
+    validations:
+      required: true
+  - type: dropdown
+    id: layout
+    attributes:
+      label: Diseño
+      description: El diseño CurseForge tiene las pestañas arriba; el diseño Modrinth, una barra de íconos a la izquierda.
+      options:
+        - CurseForge
+        - Modrinth
+    validations:
+      required: true
+  - type: input
+    id: profile
+    attributes:
+      label: Perfil
+      description: Si el problema es con un perfil o al jugar, su versión de Minecraft, su cargador de mods y, si es un modpack, su nombre.
+      placeholder: "1.21.1 con Fabric, modpack Fabulously Optimized"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log del juego
+      description: Si el problema pasa al abrir el juego o al jugar, abre el perfil, entra a **Logs** (en el diseño Modrinth se llama **Registros**) y presiona la flecha hacia arriba, «Subir a mclo.gs y copiar el enlace». Después pega aquí el enlace. Si el juego se cerró con un error, elige antes su informe en **Ver logs recientes**. Revisa que no tenga datos que prefieras no compartir.

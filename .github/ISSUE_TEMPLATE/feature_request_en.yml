@@ -1,0 +1,26 @@
+name: Suggest an improvement
+description: An idea for something to add to Havi Hub or to change in it.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: You can write in English or Spanish. If someone has already suggested the same thing, please comment on that issue instead.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would it solve?
+      description: The situation in which the current behavior falls short or gets in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: How do you imagine it?
+      description: How it would work and where it would be in the app. A screenshot or a sketch also helps.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Other options
+      description: Other ways to solve it that you have considered, or how another launcher does it.

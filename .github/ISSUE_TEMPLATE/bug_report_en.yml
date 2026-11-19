@@ -1,0 +1,72 @@
+name: Report a bug
+description: Something in Havi Hub does not work as expected.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. You can write in English or Spanish.
+        If it is a security problem, please do not post it here: follow the [security policy](https://github.com/havihub/HaviHub/security/policy).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you were doing, what happened and what you expected to happen. If an error message appeared, copy it exactly or attach a screenshot.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen again
+      description: If you know them, the steps from the moment you open Havi Hub.
+      placeholder: |
+        1. Open the profile
+        2. ...
+  - type: input
+    id: version
+    attributes:
+      label: Havi Hub version
+      description: Shown at the bottom left of Settings (for example, "v. 1.0.0 · installed").
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How it was installed
+      options:
+        - Windows installer (Setup.exe)
+        - Windows portable (.exe or .zip)
+        - Linux AppImage
+        - Linux .deb package
+        - Built from source
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "Windows 11 24H2 / Ubuntu 24.04 (Wayland) / Arch Linux"
+    validations:
+      required: true
+  - type: dropdown
+    id: layout
+    attributes:
+      label: Layout
+      description: The CurseForge layout has its tabs at the top; the Modrinth layout has a bar of icons on the left.
+      options:
+        - CurseForge
+        - Modrinth
+    validations:
+      required: true
+  - type: input
+    id: profile
+    attributes:
+      label: Profile
+      description: If the problem is with a profile or while playing, its Minecraft version, its mod loader and, for a modpack, its name.
+      placeholder: "1.21.1 with Fabric, Fabulously Optimized modpack"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Game log
+      description: If the problem happens when starting the game or while playing, open the profile, go to **Logs** and press the up arrow, "Upload to mclo.gs and copy the link". Then paste the link here. If the game closed with an error, first pick its crash report under **See recent logs**. Check that it contains nothing you would rather not share.
