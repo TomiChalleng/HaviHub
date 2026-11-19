@@ -1,0 +1,172 @@
+{
+  "name": "havihub",
+  "productName": "Havi Hub",
+  "version": "1.0.0",
+  "description": "Havi Hub - launcher de Minecraft",
+  "main": "dist/main.js",
+  "author": "Havi Hub",
+  "license": "GPL-3.0-only",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "start": "npm run build && electron .",
+    "fixtures": "node scripts/make-fixtures.mjs",
+    "test": "node --test tests/*.test.js",
+    "dist:win": "npm run build && node scripts/dist-win.cjs",
+    "dist:linux": "npm run build && node scripts/dist-linux.cjs",
+    "dist:mac": "npm run build && electron-builder --mac dmg",
+    "build:helper": "node scripts/build-helper.mjs",
+    "test:helper": "node scripts/build-helper.mjs --test && node scripts/helper-test.mjs"
+  },
+  "build": {
+    "appId": "io.github.havihub",
+    "productName": "Havi Hub",
+    "copyright": "Copyright © 2026 Havikun. GPL-3.0",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "publish": null,
+    "win": {
+      "icon": "build/icon.ico",
+      "signExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "HaviHub-${version}-win-${arch}.${ext}",
+      "extraResources": [
+        {
+          "from": "build/helper/havihub-windows.exe",
+          "to": "havihub-windows.exe"
+        },
+        {
+          "from": "build/icon.ico",
+          "to": "icon.ico"
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Havi Hub",
+      "uninstallDisplayName": "Havi Hub",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "installerLanguages": [
+        "en_US",
+        "es_ES"
+      ],
+      "deleteAppDataOnUninstall": false,
+      "packElevateHelper": false,
+      "differentialPackage": false,
+      "include": "build/installer.nsh",
+      "guid": "030ceeab-9c81-5702-95da-91eed8a5659e",
+      "artifactName": "HaviHub-${version}-Setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "HaviHub-${version}-portable.exe"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "Game",
+      "executableName": "havihub",
+      "synopsis": "Launcher de Minecraft",
+      "description": "Havi Hub: launcher de Minecraft con CurseForge y Modrinth",
+      "artifactName": "HaviHub-${version}-linux-${arch}.${ext}",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "desktop": {
+        "entry": {
+          "StartupWMClass": "havihub",
+          "Keywords": "minecraft;mods;modpack;launcher;curseforge;modrinth;"
+        }
+      },
+      "syncDesktopName": true
+    },
+    "mac": {
+      "icon": "build/icon.png",
+      "category": "public.app-category.games"
+    },
+    "electronLanguages": [
+      "es",
+      "es-419",
+      "en-US"
+    ],
+    "deb": {
+      "packageName": "havihub",
+      "maintainer": "Havikun <noreply@havihub.invalid>"
+    },
+    "appImage": {
+      "artifactName": "HaviHub-${version}-linux-${arch}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/lato": "^5.2.7",
+    "@fontsource/montserrat": "^5.3.0",
+    "@fontsource/roboto-mono": "^5.2.8",
+    "dompurify": "^3.4.17",
+    "electron": "^45.2.1",
+    "electron-builder": "^26.18.0",
+    "esbuild": "^0.28.2",
+    "marked": "^18.1.2",
+    "polygon-clipping": "^0.15.7",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "skinview3d": "^3.4.2",
+    "smol-toml": "^1.9.1",
+    "yauzl": "^3.4.0",
+    "yazl": "^3.3.1"
+  },
+  "homepage": "https://github.com/havihub/HaviHub",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/havihub/HaviHub.git"
+  },
+  "bugs": {
+    "url": "https://github.com/havihub/HaviHub/issues"
+  },
+  "desktopName": "havihub.desktop",
+  "overrides": {
+    "minimatch@>=7.0.0 <11.0.1": "^11.0.9"
+  }
+}

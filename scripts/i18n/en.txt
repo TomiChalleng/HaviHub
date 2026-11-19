@@ -1,0 +1,673 @@
++ New group…
++ on {s}
+CurseForge API key
+Open
+Open Prism
+Open Prism Launcher
+Open settings
+Open Folder
+Open Prism folder
+Open logs folder
+Open worlds folder
+Open with system viewer
+Open CurseForge console
+Open in browser
+Open group
+Open the Prism console when the game starts
+Open profile
+Open page
+Desktop shortcut created
+Quick actions
+Action
+Accent
+OK
+Enabled
+Enable
+Active
+Current
+Update
+Recently updated
+Updated {when}
+Recently updated
+Update
+Update all
+Addons
+Forward
+Warning
+Sneak
+Add content with the "Add Content" button or drag files into this list.
+Add the account in Prism → Accounts. Havi Hub will show it automatically.
+Add one here or from the game's Multiplayer menu.
+Added: {list}
+Adding content to
+Add files…
+Add Content
+Add Account
+Add account (opens Prism)
+Add server
+Wrap lines
+Fit
+Prism setting: closes its main window when the game starts
+Settings
+Game settings
+Default in-game settings
+Up to date
+On launch
+When the game starts
+When renaming a profile, also rename its folder (Prism)
+Alpha
+Something went wrong in this section
+Some CurseForge mods don't download
+Height
+Amethyst
+Ambient/Environment
+Both
+Width
+Animation
+Before launch
+Apply
+Default additional arguments
+JVM arguments
+JVM arguments for all profiles.
+Drag to rotate
+Drag a profile onto the group card or use "Move to group…" in its menu.
+Drag an image here or click to choose one
+Fixes for old versions (skins and sounds on old versions)
+Allocating almost all of your RAM can make Windows and the game slow.
+Back
+Auto
+Automatic
+Automatic (system)
+Author
+Advanced
+Adventure
+Warn when memory is very low
+Yesterday
+Help
+Title bar
+Sidebar
+Beta
+Welcome to Havi Hub
+Blocks
+Borders and separators
+Classic arms — switch to slim
+Slim arms — switch to classic
+Bright
+Brightness
+Searches CurseForge and Modrinth; if a project is on both, shows the most recently updated one
+Search
+Check for updates
+Check for updates when opening a profile
+Search log
+Search on:
+Search profiles…
+Search for Minecraft projects…
+Search skins…
+Search version…
+Search {type}…
+Search…
+Change the whole app palette
+Change
+Switch Java automatically based on the Minecraft version
+Change Image
+Changing the version can break mods or worlds. Make a backup first if you're not sure.
+Change skin
+Walk
+Field of view (FOV)
+Cancel
+Cape
+Capes
+Screenshots
+Loader
+Mod loader
+Load more
+Crimson
+Folder
+Prism Launcher folder
+Data pack folder applied to every world (requires a mod like Global Packs or Paxi)
+Prism data folder
+Prism Launcher data folder
+Data folder found, but the Prism executable is missing (the game can't be launched).
+Downloads folder (blocked mods)
+Global folder (all worlds)
+Prism folders
+Categories
+Close
+Close Havi Hub when the game starts
+Quit Prism Launcher when the game stops
+Close Prism Launcher after the game starts
+Close search
+Close the console when you stop playing
+Close the console when the game ends
+Sign out
+Day sky
+Night sky
+Light
+Click to show
+Weather
+Clone
+Clone as...
+Classic
+Accent color
+Background color
+Columns
+Wrapper command
+Custom commands
+Custom commands (Prism)
+Share Profile
+Behavior
+With updates
+With errors
+When searching "Both", if a mod is on CurseForge and Modrinth it's shown only once: the most recently updated one. You can see the other one from its page.
+Connected to Prism Launcher
+Set up
+Keep play time
+Console
+Prism console
+Game console (Prism)
+Content
+Controls
+Copy screenshots
+Copy from a player
+Copy image
+Copy worlds
+Copy file name
+Copy skin
+Copy a player's skin
+Copy all
+Run
+Create your first profile or install a modpack to get started.
+Create a new profile, import a modpack or install one from Discover.
+Create
+Create Desktop Shortcut
+Create Group
+Create instance
+Create logs.zip
+Create profile
+Create backup (.zip)
+Creative
+Friendly Creatures
+Hostile Creatures
+Any
+Microsoft account
+Offline account
+Accounts
+CurseForge requires its own API key so other apps can search and download. It's free: sign in at console.curseforge.com, create an organization and generate a key. Paste it here.
+CurseForge only lets other apps use its catalog with their own key. It's free: create it at console.curseforge.com and paste it in Settings → Addons. Without a key, everything works with Modrinth.
+CurseForge and Modrinth in one place
+Source code
+Data Packs
+Data packs
+Data packs of:
+Global data packs
+Disabled
+Disable
+Manual download required
+Download Java automatically if missing
+Download Prism
+Download Prism Launcher
+Download maps
+Downloads
+Simultaneous downloads (Prism)
+Downloads and tasks
+Unknown
+Description
+Description (optional)
+Discover
+Discover modpacks
+After exit
+Detect
+Detect automatically
+Stop
+Stop logging when the limit is reached
+Address
+Render Distance
+Duplicate
+Leave them empty to use the official ones.
+Where to search
+Edit
+Edit server
+Prism Launcher executable
+Example: -XX:+UseG1GC
+The file isn't a valid theme
+The author doesn't allow downloads from other apps
+The log is empty. Start the game to see its log here in real time.
+Permission to change your skin lasts 24 hours. If it expired, open Prism Launcher once (or play) and try again.
+Whatever Minecraft picks
+Choose Java automatically
+Choose automatically
+Choose image…
+Choose world or server
+Choose…
+Pick a base and change any color below: every color in the app is customizable.
+Delete
+Delete screenshot
+Delete group
+Delete world
+Delete Profile
+Delete skin
+Delete {name}
+Delete {n} items
+The Play menu shows 2*.***.**.151 instead of the full IP
+In Prism's "icons" folder, so Prism Launcher shows them too. They're cropped to a 512×512 square automatically.
+Fit
+Env
+Join
+Join a server directly
+GUI Scale
+Write anything you want to remember about this profile…
+Emerald
+Spectator
+Game Specific
+This account has no capes
+Release
+Release (Recommended)
+Releases
+Status
+Statuses
+This group is empty
+These settings are saved in Prism Launcher's instance.cfg.
+Browse
+Export this profile to a file to share it. Your friends can import it in Havi Hub, Prism Launcher or any compatible launcher.
+Exported to {p}
+Export
+Hardcore
+Date created
+Date modified
+Compact rows
+Normal rows
+Filter
+Filter levels
+Background
+Main background
+Backgrounds and surfaces
+Forge (orange)
+Default source for Discover and Browse. With "Both", if a mod is on CurseForge and Modrinth it's shown only once: the most recently updated one.
+Gallery
+General
+Global: {min} MB – {max} MB
+Group
+Save and you're done: you'll see your Prism profiles, groups and accounts.
+Save
+Save Prism metadata (.pw.toml)
+Save paths
+Save and continue
+1 year ago
+1 month ago
+{n} years ago
+{n} days ago
+{n} h ago
+{n} months ago
+{n} min ago
+Some authors don't allow downloads from other apps. Havi Hub shows you the link: download it in your browser and put it in the indicated folder.
+Hover / active elements
+Havi Hub language
+Prism Launcher language
+Language of the Prism window (console, Prism dialogs).
+Game language for new profiles
+Languages
+Skip Java compatibility check
+Image copied to clipboard
+Import
+Import
+Import world (.zip)
+Profile images
+Include worlds
+Includes the whole profile: mods, config and resource packs.
+Info
+Starting {name}…
+Launch the game with Prism Launcher
+Start maximized
+Home
+Install Prism Launcher if you don't have it (prismlauncher.org) and open it once.
+Java installation
+Installed
+Installed {name}
+Installed {name} (+{n} dependencies)
+Installing {name}… you can keep using the app.
+Install
+Install dependencies automatically
+Install in {name}
+Install modpack
+Install…
+Instance cloned
+Instance created: {name}
+Prism instance (.zip)
+Interface
+Invert Mouse
+Go to the end (follow the log)
+Go to the top
+Downloaded Java
+Default Java
+Java & memory
+Selected game (sidebar)
+Recently played
+Players
+Playing
+Play
+Play this world
+Key set
+The image is cropped to a square and saved at 512×512, whatever its original size.
+Prism's session for {name} expired. To apply changes open Prism Launcher once (or play) and come back.
+The Prism window with the live log, to see errors while you play
+Accounts come from Prism Launcher. To add a Microsoft account, Prism opens (its sign-in is the official one); Havi Hub detects it instantly.
+Instances in group "{g}" aren't deleted: they become ungrouped.
+Native libraries will be regenerated on launch.
+Skins are saved in Prism Launcher's skins folder, so they also show up in its "Manage skins" window.
+Launcher
+Native libraries
+Clear
+Done
+Log copied
+Log uploaded. Link copied: {url}
+Log: warnings
+Log: errors
+Log: time and thread
+Logs
+The authors of these files don't allow downloads from other apps. Download them from their page and put them in the indicated folder.
+Logs are uploaded to mclo.gs, the same service Prism Launcher uses by default. They're only uploaded when you press the button.
+CurseForge maps install from their page: download it and use "Import world (.zip)".
+Mods downloaded from Modrinth are included as links; the rest (config, mods from other sources) is copied into the file.
+Worlds you create in the game will show up here.
+Worlds are only on CurseForge
+Maximize
+Memory
+Allocated Memory
+Maximum memory (MB)
+Minimum memory
+Minimum memory (MB)
+Default memory for all profiles (each profile can change it in Profile Options).
+Menus, inputs and headers
+Orphaned metadata removed: {list}
+My creation
+My instance
+Minimize
+Minimize Havi Hub when the game starts
+My Modpacks
+My Skins
+Streamer mode
+Modrinth modpack (.mrpack)
+Managed modpack
+Modpack installed with warnings
+Modpack installed: {name}
+Modpacks
+Mods
+Shared mods
+Showing only the end of the file (it's very large).
+Show
+Show cape
+Show with elytra
+Show play time in Prism
+Show in folder
+Show the console when the game starts
+Show the console if the game crashes
+Move
+Move to group
+Move to group…
+Move manually downloaded mods from the Downloads folder (Prism)
+View Bobbing
+Multiplayer
+Worlds
+More
+Most downloaded
+Newest
+More options
+Maximum console lines
+Music
+Levels
+Not available for {v}
+I couldn't find Prism Launcher automatically. Choose the paths manually.
+I couldn't find Prism Launcher. Is it installed? If it's portable, choose its folder manually.
+There are no accounts in Prism Launcher.
+No downloads in progress
+No logs
+Nothing here yet
+There's no Microsoft account in Prism Launcher. You can view and save skins, but you need to sign in to Prism to apply them.
+No compatible versions
+No changes.
+I can't apply my skin
+No Java installations found. Prism can download them automatically.
+Prism Launcher wasn't found.
+Profile not found
+Couldn't open Prism Launcher: {e}
+Couldn't load content
+Couldn't load the project
+Couldn't load the version list: {e}
+Couldn't read the log
+You have no saved servers
+Name
+Copy name
+Minecraft username
+Group name
+Normal
+Notes
+New version: {v}
+New
+Never
+Never played
+Line numbers
+Hide the account name
+Hide server IP addresses
+Ocean
+Skipped
+Profile Options
+Options saved
+Sort
+Sort by
+Dark
+Color palette
+Full-Screen
+For accounts and advanced options
+To see CurseForge results you need your own free CurseForge API key.
+Pause animation
+Danger
+Profile
+Profile deleted
+Profile repaired
+Profiles (instances)
+Lets Prism Launcher also recognize and update what you install from here
+Custom
+Customize colors
+Customize the game's settings
+Popularity
+Default
+Prism default
+Default
+Ask
+Press "Detect automatically". If you use portable Prism, choose its folder manually.
+Press F2 in game to take a screenshot.
+Press a key…
+Havi Hub is the interface; Prism Launcher handles sign-in, Java, libraries and launching the game.
+Havi Hub doesn't send statistics or usage data. It only connects to Modrinth, CurseForge, Minecraft's servers and Prism's version server when you need them.
+Havi Hub uses your Prism Launcher installation: it reads its profiles, groups, accounts and settings, and asks Prism to start the game.
+Prism Launcher
+Prism Launcher set up
+Prism Launcher isn't set up
+Prism Launcher was already open: the game is starting there.
+Prism counts the hours played in this profile
+Prism picks (and downloads if needed) the right Java version for each Minecraft version
+Privacy
+Problems: {list}
+Proxy
+System proxy
+Try other words or remove some filters.
+May not be compatible
+Port
+Idle
+Remove
+Remove account
+Clear filters
+Remove image
+Remove server
+Which kind of versions to install and suggest as updates
+Resume animation
+Reload
+Recommended
+Recommended: each game version needs a different Java version
+Crop
+Network
+Reduce animations
+Record play time
+Record play time
+Retry
+Relevance
+Performance (Linux)
+Rename
+Rename group
+Rename skin
+Repairing {name}…
+Repair Profile
+Report issues
+Game Resolution
+Resource Packs
+Reset
+Reset to base theme
+Reset to default
+Restore
+Install result
+Scroll to zoom
+Path to java / javaw.exe
+Paths relative to Prism's data folder, or absolute. Changing them doesn't move your files.
+Auto-Jump
+Wave
+Prism Launcher opened. Add your account in Accounts and come back: Havi Hub detects it automatically.
+They're written to the options.txt of every new profile you create or install.
+They'll be moved to the trash.
+Downloaded again: {list}
+Continue playing
+Mouse Sensitivity
+Log upload service
+Game resource server
+Version server (meta)
+Servers
+Alternative servers (Prism)
+Servers saved in your profiles' multiplayer list
+Shaders
+If disabled, new profiles use Minecraft's default settings
+If a project is on CurseForge and Modrinth, it's shown only once: the most recently updated one.
+Always
+No Cape
+No screenshots
+No account
+None
+Ungrouped
+No images
+No key: only Modrinth will be used
+No worlds
+No worlds yet
+No proxy
+No results
+No saved servers
+Default skin
+Skins
+Snapshots
+Client only
+Only compatible with {name} ({v})
+Only needed to see private or unpublished projects.
+Server only
+Sound Settings
+Upload to mclo.gs and copy the link
+Upload Skin
+Drop the files to add them
+Survival
+Size
+Interface size
+Window size
+Also on {s}; the most recently updated version is shown.
+Cards and panels
+Key Binding
+Theme imported
+Themes
+Preset themes
+Text
+Muted text
+Main text
+Secondary text
+Text on accent
+Network timeout (seconds)
+Play time
+Time played
+Jukebox/Note Blocks
+All
+All versions
+You don't have any profiles yet
+All
+Modrinth token (optional)
+Cheats
+Your graphics card didn't allow the 3D view (WebGL). A 2D view is shown instead; updating your graphics drivers usually fixes it.
+Singleplayer
+A high distance can lower FPS a lot
+A CurseForge-style interface for your Prism Launcher. First, tell me where Prism is.
+An alternative interface for Prism Launcher. Your profiles, groups, mods, worlds and accounts are still Prism's: Havi Hub just shows and edits them with a different design, and asks Prism to start the game.
+Using the custom key set in Prism
+Use system GLFW
+Use dedicated GPU
+Use Modrinth when a CurseForge mod doesn't allow downloads (Prism)
+Use system OpenAL
+Use global settings
+Use classic arms
+Use slim arms
+Use desktop resolution (maximized window)
+Set as default
+Use a specific account for this profile
+Use custom resolution
+User
+Extra environment variables (JSON)
+Available variables: $INST_NAME, $INST_ID, $INST_DIR, $INST_MC_DIR, $INST_JAVA, $INST_JAVA_ARGS
+Variables: $INST_NAME, $INST_ID, $INST_DIR, $INST_MC_DIR, $INST_JAVA, $INST_JAVA_ARGS
+Go to the account (top right) → Add Account. Prism Launcher opens with its official sign-in; when you're done, Havi Hub shows it automatically.
+Game window
+View on {source}
+See recent logs
+View profile
+Also see on {s}
+See all in Browse
+Verify Prism installation
+Versions
+Java Versions
+Version
+Minecraft version
+Loader version
+Game version
+Preferred Release
+Version and loader
+Video Settings
+3D view with capes and elytra
+Grid view
+List view
+Fly
+Master Volume
+Back
+Back to profile
+Voice/Speech
+Prism Launcher wiki
+A group with that name already exists
+Zoom
+dependency
+offline
+by {a}
+session active
+session expired (renews when you play)
+version
+{n} files verified OK.
+{n} screenshots
+{n} profiles
+{n} selected
+{t} played in total
+Hi!
+Hi, {name}!
+Skin applied! You'll see it in game the next time you join.
+How do I add my Microsoft account?
+Where are my profile images stored?
+Delete "{name}"? It will be moved to the trash along with its worlds, mods and screenshots.
+Delete "{name}"? It will be moved to the trash.
+Which profile should I install it in?
+Why does CurseForge need an API key?
+Remove "{name}" from {inst}'s list?
+Remove the account {name} from Prism Launcher? You'll have to sign in again to play online.
+Remove {name} from Prism Launcher?
+What is Havi Hub?
+What about duplicated mods?
+Success
+Last played
+Useful on uncommon systems (Linux ARM, etc.)

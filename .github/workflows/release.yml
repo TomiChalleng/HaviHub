@@ -1,0 +1,146 @@
+name: Release
+
+# A tag such as v1.0.0 builds the installers and attaches them to a draft
+# release, which is published by hand after checking it. Started by hand
+# (Actions → Release → Run workflow), it only builds them, as artifacts.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Check that the tag matches package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      # without it, CurseForge would ask every user for an API key of their own
+      - name: Check that the CurseForge key is set
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          HAVIHUB_CF_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+        run: test -n "$HAVIHUB_CF_KEY" || { echo "::error::The CURSEFORGE_API_KEY secret is not set."; exit 1; }
+      - run: python -m pip install ziglang
+      - run: npm ci
+      - name: Build the window helper from source
+        run: npm run build:helper
+      - name: Build the installer, portable and zip
+        run: npm run dist:win
+        env:
+          HAVIHUB_CF_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+      - uses: actions/upload-artifact@v6
+        with:
+          name: HaviHub-Windows-Setup
+          if-no-files-found: error
+          compression-level: 0
+          path: release/HaviHub-*-Setup.exe
+      - uses: actions/upload-artifact@v6
+        with:
+          name: HaviHub-Windows-Portable
+          if-no-files-found: error
+          compression-level: 0
+          path: release/HaviHub-*-portable.exe
+      - uses: actions/upload-artifact@v6
+        with:
+          name: HaviHub-Windows-Zip
+          if-no-files-found: error
+          compression-level: 0
+          path: release/HaviHub-*-win-x64.zip
+
+  linux:
+    name: Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - name: Check that the tag matches package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      - name: Check that the CurseForge key is set
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          HAVIHUB_CF_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+        run: test -n "$HAVIHUB_CF_KEY" || { echo "::error::The CURSEFORGE_API_KEY secret is not set."; exit 1; }
+      - run: npm ci
+      - run: npm test
+      - name: Build the AppImage and .deb
+        run: npm run dist:linux
+        env:
+          HAVIHUB_CF_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+      - uses: actions/upload-artifact@v6
+        with:
+          name: HaviHub-Linux-AppImage
+          if-no-files-found: error
+          compression-level: 0
+          path: release/HaviHub-*-linux-x86_64.AppImage
+      - uses: actions/upload-artifact@v6
+        with:
+          name: HaviHub-Linux-Deb
+          if-no-files-found: error
+          compression-level: 0
+          path: release/HaviHub-*-linux-amd64.deb
+
+  publish:
+    name: Draft release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v7
+        with:
+          path: files
+          merge-multiple: true
+      - name: Checksums
+        working-directory: files
+        run: sha256sum HaviHub-* > SHA256SUMS.txt && cat SHA256SUMS.txt
+      # the notes written for this version (docs/releases/<version>.md), if
+      # there are any, then the checksums and the policy links, which SignPath
+      # asks for on every download page; GitHub appends the merged changes
+      - name: Release notes
+        run: |
+          written="docs/releases/${GITHUB_REF_NAME#v}.md"
+          {
+            if [ -f "$written" ]; then
+              cat "$written"
+              printf '\n---\n\n'
+            fi
+            cat <<'EOF'
+          Los archivos para Windows y Linux están más abajo, y la suma SHA-256 de cada uno en `SHA256SUMS.txt`.
+          The Windows and Linux files are below, and the SHA-256 checksum of each one is in `SHA256SUMS.txt`.
+
+          - [Code signing policy](https://havihub.github.io/code-signing-policy/)
+          - [Privacidad / Privacy](https://havihub.github.io/privacy/)
+          EOF
+          } > notes.md
+          cat notes.md
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "$GITHUB_REF_NAME" files/*
+          --repo "$GITHUB_REPOSITORY"
+          --draft
+          --title "Havi Hub ${GITHUB_REF_NAME#v}"
+          --notes-file notes.md
+          --generate-notes

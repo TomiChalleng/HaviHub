@@ -1,0 +1,26 @@
+name: Proponer una mejora
+description: Una idea para agregar o cambiar algo en Havi Hub.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Puedes escribir en español o en inglés. Si alguien ya propuso lo mismo, es mejor comentar en ese issue.
+  - type: textarea
+    id: problem
+    attributes:
+      label: ¿Qué problema resolvería?
+      description: En qué situación lo que hay hoy no alcanza o se vuelve incómodo.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: ¿Cómo te lo imaginas?
+      description: Cómo funcionaría y en qué parte de la app estaría. Una captura o un dibujo también sirven.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Otras opciones
+      description: Otras formas de resolverlo que hayas pensado, o cómo lo hace otro launcher.
