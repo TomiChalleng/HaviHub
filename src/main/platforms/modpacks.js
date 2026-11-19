@@ -17,6 +17,28 @@ const { safeRelPath, resolveInside, resolveRelInside } = require('../util/safepa
 
 const MR_DEP_TO_LOADER = { 'fabric-loader': 'fabric', 'quilt-loader': 'quilt', forge: 'forge', neoforge: 'neoforge' };
 
+// One file of a .mrpack. Its addresses come from the pack itself, so only
+// HTTPS ones are used, as Modrinth's format asks: a file: address would copy
+// any file of this computer into the profile (and on Windows, file://server/…
+// would connect to that server with the person's credentials). The addresses
+// are mirrors, tried in order, and the strongest hash the pack gives decides.
+async function downloadPackFile(f, dest) {
+  const urls = (Array.isArray(f.downloads) ? f.downloads : []).filter((u) => typeof u === 'string' && /^https:\/\//i.test(u));
+  if (!urls.length) throw new Error('El modpack no indica una dirección HTTPS para este archivo');
+  const hashes = f.hashes || {};
+  const check = hashes.sha512 ? { hash: hashes.sha512, hashAlgo: 'sha512' } : hashes.sha1 ? { hash: hashes.sha1, hashAlgo: 'sha1' } : {};
+  let lastError;
+  for (const url of urls) {
+    try {
+      return await http.download(url, dest, check);
+    } catch (e) {
+      if (e && e.code === 'CANCELLED') throw e;
+      lastError = e;
+    }
+  }
+  throw lastError;
+}
+
 class Modpacks {
   constructor({ ctxProvider, instances, tasks, appConfig, emit }) {
     this.ctxProvider = ctxProvider;
@@ -119,10 +141,9 @@ class Modpacks {
       await http.pool(files, 6, async (f) => {
         const rel = safeRelPath(f.path);
         if (!rel) return;
-        const url = (f.downloads || [])[0];
         try {
           const dest = await resolveRelInside(game, rel);
-          await http.download(url, dest, { hash: f.hashes && f.hashes.sha1, hashAlgo: 'sha1' });
+          await downloadPackFile(f, dest);
         } catch (e) {
           failed.push({ title: rel, reason: e.message });
         }

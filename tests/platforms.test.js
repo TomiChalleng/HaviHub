@@ -201,6 +201,52 @@ test('export mrpack and re-import it', async () => {
   assert.equal(cfgFile.get('uuid', ''), '');
 });
 
+// A .mrpack lists where each file comes from. Only HTTPS addresses count
+// (Modrinth's format asks for them): a file: address would copy any file of
+// this computer into the profile, and on Windows a file://server/share one
+// would connect to that server and hand it the person's credentials.
+test('mrpack: only HTTPS downloads, tried in order, checked with the best hash', async () => {
+  const secret = path.join(tmp, 'secret.txt');
+  await fsp.writeFile(secret, 'not for the pack');
+  const good = Buffer.from('mirror jar');
+  const sha512 = require('node:crypto').createHash('sha512').update(good).digest('hex');
+  const routes = {
+    'https://broken.example/a.jar': { status: 404 },
+    'https://mirror.example/a.jar': { body: good },
+    'https://cdn.example/b.jar': { body: Buffer.from('changed in transit') },
+  };
+  const index = {
+    formatVersion: 1,
+    game: 'minecraft',
+    versionId: '1',
+    name: 'Hostile pack',
+    dependencies: { minecraft: '26.2', 'fabric-loader': '0.16.0' },
+    files: [
+      { path: 'config/leak.txt', downloads: [require('node:url').pathToFileURL(secret).href], hashes: {} },
+      { path: 'mods/a.jar', downloads: ['https://broken.example/a.jar', 'https://mirror.example/a.jar'], hashes: { sha1: '0'.repeat(40), sha512 } },
+      { path: 'mods/b.jar', downloads: ['https://cdn.example/b.jar'], hashes: { sha512: 'f'.repeat(128) } },
+    ],
+  };
+  const file = path.join(tmp, 'hostile.mrpack');
+  await require('../src/main/util/zip').writeZip(file, [{ name: 'modrinth.index.json', buffer: Buffer.from(JSON.stringify(index)) }]);
+  http.setFetch(async (url, opts) => {
+    const r = routes[url];
+    if (r) return new Response(r.body || null, { status: r.status || 200 });
+    return mock.fetch(url, opts);
+  });
+  try {
+    const r = await modpacks.importArchive(file, {});
+    const inst = await instances.get(r.id);
+    assert.ok(!fs.existsSync(path.join(inst.gameDir, 'config', 'leak.txt')), 'a file: address must not copy a local file');
+    // the first address failed, the mirror worked, and its sha512 (not the wrong sha1) decided
+    assert.equal(fs.readFileSync(path.join(inst.gameDir, 'mods', 'a.jar'), 'utf8'), 'mirror jar');
+    assert.ok(!fs.existsSync(path.join(inst.gameDir, 'mods', 'b.jar')), 'a file that does not match its hash is not kept');
+    assert.deepEqual(r.failed.map((f) => f.title).sort(), ['config/leak.txt', 'mods/b.jar']);
+  } finally {
+    http.setFetch(mock.fetch);
+  }
+});
+
 test('meta: versions and loaders from Prism meta', async () => {
   const meta = new Meta(path.join(tmp, 'cache'), () => '');
   const mc = await meta.minecraftVersions();
