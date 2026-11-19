@@ -52,6 +52,7 @@ const { Sharing } = require('./sharing');
 const { startWindowHelper } = require('./winhelper');
 const { resolvePalette } = require('../shared/themes.js');
 const { LIMITS, cleanText } = require('../shared/limits.js');
+const { UserError, tr } = require('../shared/usertext');
 
 protocol.registerSchemesAsPrivileged([
   // codeCache: the page's compiled code is kept between starts, so later starts skip that work
@@ -531,7 +532,7 @@ http.setHostRules({
   },
   explain: (status, url) =>
     (status === 401 || status === 403) && isForgeCdn(url)
-      ? Object.assign(new Error('CurseForge no aceptó la descarga: falta su API key o no es válida. Revísala en Ajustes → Addons.'), { code: 'CF_KEY' })
+      ? Object.assign(new UserError('CurseForge no aceptó la descarga: falta su API key o no es válida. Revísala en Ajustes → Addons.'), { code: 'CF_KEY' })
       : null,
 });
 
@@ -583,7 +584,7 @@ async function setupWatchers() {
 
 function need(name) {
   if (!services || !services[name]) {
-    const e = new Error('La carpeta de datos de Havi Hub no está disponible. Revisa Ajustes → Avanzado.');
+    const e = new UserError('La carpeta de datos de Havi Hub no está disponible. Revisa Ajustes → Avanzado.');
     e.code = 'NO_DATA';
     throw e;
   }
@@ -678,7 +679,7 @@ const api = {
     return api['app.state']();
   },
   'app.setEngineExe': async (exe) => {
-    if (exe && !(await exists(exe))) throw new Error('No se encontró el ejecutable indicado');
+    if (exe && !(await exists(exe))) throw new UserError('No se encontró el ejecutable indicado');
     await config.update({ engineExe: exe || '' });
     if (!exe) engine.check({ force: true });
     return engine.status();
@@ -770,7 +771,7 @@ const api = {
   },
   'app.copyImage': async (p) => {
     const image = nativeImage.createFromPath(p);
-    if (image.isEmpty()) throw new Error('No se pudo leer la imagen');
+    if (image.isEmpty()) throw new UserError('No se pudo leer la imagen');
     // Electron's newer clipboard takes items by type (like the web one); the older one takes the image
     const { ClipboardItem } = require('electron');
     if (typeof ClipboardItem === 'function') {
@@ -784,7 +785,7 @@ const api = {
   },
   'app.fetchImage': async (url) => {
     // Remote image -> data URL (avoids CORS issues in the 3D skin viewer)
-    if (!/^https:\/\//.test(url)) throw new Error('URL inválida');
+    if (!/^https:\/\//.test(url)) throw new UserError('URL inválida');
     const buf = await http.getBuffer(url);
     return `data:image/png;base64,${buf.toString('base64')}`;
   },
@@ -795,7 +796,7 @@ const api = {
     return (await ctx.loadCfg()).toObject();
   },
   'prism.setSettings': async (patch) => {
-    if (!ctx) throw Object.assign(new Error('Prism no configurado'), { code: 'NO_PRISM' });
+    if (!ctx) throw Object.assign(new UserError('Prism no configurado'), { code: 'NO_PRISM' });
     const cfg = await ctx.loadCfg();
     for (const [k, v] of Object.entries(patch)) {
       if (v === undefined) cfg.remove(k);
@@ -833,7 +834,7 @@ const api = {
   },
   'instances.createGroup': async (name) => {
     const n = cleanText(name, LIMITS.groupName);
-    if (!n) throw new Error('El grupo necesita un nombre');
+    if (!n) throw new UserError('El grupo necesita un nombre');
     const extra = new Set(config.get().extraGroups || []);
     extra.add(n);
     await config.replaceKey('extraGroups', [...extra]);
@@ -841,7 +842,7 @@ const api = {
   },
   'instances.renameGroup': async (from, to) => {
     const t = cleanText(to, LIMITS.groupName);
-    if (!t) throw new Error('El grupo necesita un nombre');
+    if (!t) throw new UserError('El grupo necesita un nombre');
     await groups.renameGroup(ctx, from, t);
     await config.replaceKey('extraGroups', (config.get().extraGroups || []).map((g) => (g === from ? t : g)));
     await need('instances').renameGroupImage(from, t);
@@ -856,7 +857,7 @@ const api = {
   // the picture on a group's card: a picture of the user's or an icon made in the editor
   'instances.setGroupImage': async (name, bytes, opts) => {
     const n = cleanText(name, LIMITS.groupName);
-    if (!n) throw new Error('El grupo necesita un nombre');
+    if (!n) throw new UserError('El grupo necesita un nombre');
     await need('instances').setGroupImage(n, toBuffer(bytes), opts || {});
     emit('instances:changed', {});
   },
@@ -895,7 +896,7 @@ const api = {
     const p = { ...(patch || {}) };
     if ('name' in p) {
       p.name = cleanText(p.name, LIMITS.instanceName);
-      if (!p.name) throw new Error('El nombre no puede estar vacío');
+      if (!p.name) throw new UserError('El nombre no puede estar vacío');
     }
     for (const [k, v] of Object.entries(p)) if (typeof v === 'string' && v.length > LIMITS.textarea) p[k] = v.slice(0, LIMITS.textarea);
     if ('Env' in p && p.Env !== undefined) p.Env = cleanEnv(p.Env);
@@ -929,7 +930,7 @@ const api = {
     // it with its own window, so Havi Hub asks for the sign-in first
     const using = ownAccount ? accounts.find((a) => a.id === String(instSettings.InstanceAccountId || '')) : accounts.find((a) => a.name === profile);
     if (using && using.needsLogin) {
-      const e = new Error(`${using.name} tiene que iniciar sesión de nuevo.`);
+      const e = new UserError('{name} tiene que iniciar sesión de nuevo.', { name: using.name });
       e.code = 'NEEDS_LOGIN';
       e.data = { account: using.name };
       throw e;
@@ -982,7 +983,7 @@ const api = {
     return api['linux.menuState']();
   },
   'linux.menuInstallSystem': async () => {
-    if (!process.env.APPIMAGE) throw new Error('Esta opción es para la versión AppImage. Con el paquete .deb, Havi Hub ya aparece para todos los usuarios.');
+    if (!process.env.APPIMAGE) throw new UserError('Esta opción es para la versión AppImage. Con el paquete .deb, Havi Hub ya aparece para todos los usuarios.');
     const iconFile = path.join(RENDERER_DIR, 'static', 'icon.png');
     const r = await installSystemMenuEntry({ appImage: process.env.APPIMAGE, iconFile });
     return { ...r, ...(await api['linux.menuState']()) };
@@ -1252,7 +1253,7 @@ const api = {
 async function repairInstance(id) {
   const content = need('content');
   const tasks = need('tasks');
-  return tasks.run('Reparando perfil', { kind: 'repair', instanceId: id }, async (task) => {
+  return tasks.run(tr('Reparando perfil'), { kind: 'repair', instanceId: id }, async (task) => {
     const report = { redownloaded: [], removedMetadata: [], ok: 0, problems: [] };
     const kinds = ['mods', 'resourcepacks', 'shaderpacks'];
     for (let k = 0; k < kinds.length; k++) {
@@ -1261,7 +1262,7 @@ async function repairInstance(id) {
       const entries = [...meta.values()];
       for (let i = 0; i < entries.length; i++) {
         const m = entries[i];
-        task.progress((k + i / Math.max(1, entries.length)) / kinds.length, `Revisando ${m.filename}`);
+        task.progress((k + i / Math.max(1, entries.length)) / kinds.length, tr('Revisando {file}', { file: m.filename }));
         const file = await resolveInside(folder, m.filename).catch(() => null);
         if (!file) {
           report.problems.push(`${m.filename}: ruta inválida`);
@@ -1323,7 +1324,8 @@ ipcMain.handle('api', async (event, method, args) => {
     return { ok: true, value };
   } catch (e) {
     if (isDev) console.error(method, e);
-    return { ok: false, error: { message: String((e && e.message) || e), code: (e && e.code) || 'ERROR', data: e && e.data } };
+    // i18n: the template and values the interface translates (shared/usertext.js)
+    return { ok: false, error: { message: String((e && e.message) || e), code: (e && e.code) || 'ERROR', data: e && e.data, i18n: e && e.i18n } };
   }
 });
 
@@ -1687,7 +1689,7 @@ function getBlockedDownloads() {
     complete: async (entry) => {
       const r = entry.resume || {};
       if (r.kind === 'pack') {
-        if (!PACK_FOLDERS.includes(r.folder) || !r.version || !r.version.files || !r.version.files[0]) throw new Error('Archivo de modpack no válido');
+        if (!PACK_FOLDERS.includes(r.folder) || !r.version || !r.version.files || !r.version.files[0]) throw new UserError('Archivo de modpack no válido');
         r.version.files[0].filename = path.basename(String(r.version.files[0].filename));
         await need('modpacks').placeFile({ game: String(r.game), folder: r.folder, version: r.version, mod: r.mod });
         emit('content:changed', {});
@@ -1695,7 +1697,7 @@ function getBlockedDownloads() {
       }
       const out = r.kind === 'world' ? await need('platforms').installWorld(r.args) : await need('platforms').install(r.args);
       if (out.failed && out.failed.length) throw new Error(out.failed[0].reason);
-      if (out.blocked && out.blocked.length) throw new Error('No se pudo instalar el archivo descargado.');
+      if (out.blocked && out.blocked.length) throw new UserError('No se pudo instalar el archivo descargado.');
     },
   });
   return blockedDownloads;

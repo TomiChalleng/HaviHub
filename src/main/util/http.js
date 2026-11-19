@@ -8,6 +8,7 @@ const crypto = require('node:crypto');
 const { Readable } = require('node:stream');
 const { pipeline } = require('node:stream/promises');
 const { currentSignal, throwIfCancelled, cancelledError } = require('./cancel');
+const { UserError } = require('../../shared/usertext');
 
 // eslint-disable-next-line no-undef
 const USER_AGENT = `HaviHub/${typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'} (Minecraft launcher)`;
@@ -114,7 +115,7 @@ async function request(url, { method = 'GET', headers = {}, body, json, timeout 
       }
     }
   }
-  const err = new Error(`No se pudo conectar: ${url} (${lastErr && lastErr.message})`);
+  const err = new UserError('No se pudo conectar: {url} ({reason})', { url, reason: lastErr && lastErr.message });
   err.code = 'NETWORK';
   throw err;
 }
@@ -148,7 +149,7 @@ async function download(url, dest, { onProgress, hash, hashAlgo = 'sha1', header
     if (hash) {
       const hasher = crypto.createHash(hashAlgo);
       await pipeline(fs.createReadStream(src), hasher);
-      if (hasher.digest('hex').toLowerCase() !== String(hash).toLowerCase()) throw Object.assign(new Error(`El archivo no coincide con su hash (${path.basename(dest)})`), { code: 'HASH_MISMATCH' });
+      if (hasher.digest('hex').toLowerCase() !== String(hash).toLowerCase()) throw new UserError('El archivo no coincide con su hash ({file})', { file: path.basename(dest) }, { code: 'HASH_MISMATCH' });
     }
     await fsp.rm(dest, { force: true });
     await fsp.copyFile(src, dest);
@@ -180,7 +181,7 @@ async function download(url, dest, { onProgress, hash, hashAlgo = 'sha1', header
     const got = hasher.digest('hex');
     if (got.toLowerCase() !== String(hash).toLowerCase()) {
       await fsp.rm(tmp, { force: true });
-      const err = new Error(`El archivo descargado no coincide con su hash (${path.basename(dest)})`);
+      const err = new UserError('El archivo descargado no coincide con su hash ({file})', { file: path.basename(dest) });
       err.code = 'HASH_MISMATCH';
       throw err;
     }

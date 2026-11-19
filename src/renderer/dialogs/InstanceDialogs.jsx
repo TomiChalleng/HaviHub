@@ -5,7 +5,7 @@ import { Button, Input, Checkbox, Select, Pills } from '../components/ui.jsx';
 import Icon from '../components/Icon.jsx';
 import InstanceImage from '../components/InstanceImage.jsx';
 import { call } from '../lib/api.js';
-import { t } from '../lib/i18n.js';
+import { t, tm } from '../lib/i18n.js';
 import { useApp } from '../lib/store.jsx';
 import { LIMITS } from '../../shared/limits.js';
 import { compatIssue, cmpVersion } from '../../shared/compat.js';
@@ -245,7 +245,7 @@ export function InstallResultDialog({ result, title, onResolve }) {
             {skipped.map((i, n) => (
               <div key={n} className="result-row">
                 <Icon name="info" size={16} />
-                {i.title} <span className="muted">— {i.reason}</span>
+                {i.title} <span className="muted">— {tm(i.reason)}</span>
               </div>
             ))}
           </div>
@@ -278,7 +278,7 @@ export function InstallResultDialog({ result, title, onResolve }) {
             {failed.map((f, n) => (
               <div key={n} className="result-row err">
                 <Icon name="xCircle" size={16} />
-                {f.title} <span className="muted">— {f.reason}</span>
+                {tm(f.title)} <span className="muted">— {tm(f.reason)}</span>
               </div>
             ))}
           </div>

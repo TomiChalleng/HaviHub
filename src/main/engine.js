@@ -23,6 +23,7 @@ const { readJson, writeJson, exists, listDir, parseLenientJson } = require('./ut
 const { IniFile } = require('./util/ini');
 const { resolvePalette, luminance, mix } = require('../shared/themes.js');
 const { brandEngine, isBranded } = require('./engine-brand');
+const { UserError, tr } = require('../shared/usertext');
 
 const REPO = 'PrismLauncher/PrismLauncher';
 const API_RELEASES = `https://api.github.com/repos/${REPO}/releases`;
@@ -441,8 +442,8 @@ class EngineManager {
     const names = assetNames(rel.version);
     const listed = (rel.assets || []).find((a) => names.includes(a.name));
     const asset = listed || (names[0] ? { name: names[0], url: releaseAssetUrl(rel.tag || rel.version, names[0]) } : null);
-    if (!asset) throw new Error('No hay un motor de juego descargable para este sistema.');
-    const title = `Motor de juego de Havi Hub ${rel.version}`;
+    if (!asset) throw new UserError('No hay un motor de juego descargable para este sistema.');
+    const title = tr('Motor de juego de Havi Hub {v}', { v: rel.version });
     const run = async (task) => {
       const archive = path.join(this.dir, 'downloads', asset.name);
       await http.download(asset.url, archive, {
@@ -459,10 +460,10 @@ class EngineManager {
         await pipeline(fs.createReadStream(archive), hash);
         if (hash.digest('hex') !== want[1].toLowerCase()) {
           await fsp.rm(archive, { force: true });
-          throw new Error('La descarga del motor no coincide con la huella SHA-256 que publica GitHub. Se descartó y se intentará de nuevo.');
+          throw new UserError('La descarga del motor no coincide con la huella SHA-256 que publica GitHub. Se descartó y se intentará de nuevo.');
         }
       }
-      if (task) task.progress(0.88, 'Descomprimiendo…');
+      if (task) task.progress(0.88, tr('Descomprimiendo…'));
       const target = this.versionDir(rel.version);
       const tmp = `${target}.partial`;
       await fsp.rm(tmp, { recursive: true, force: true });
@@ -475,11 +476,11 @@ class EngineManager {
         const ents = (await listDir(root)).filter((e) => e.isDirectory());
         if (ents.length === 1 && (await exists(path.join(root, ents[0].name, exeRelPath())))) root = path.join(root, ents[0].name);
       }
-      if (!(await exists(path.join(root, exeRelPath())))) throw new Error('El archivo descargado no contiene el motor de juego.');
+      if (!(await exists(path.join(root, exeRelPath())))) throw new UserError('El archivo descargado no contiene el motor de juego.');
       // Havi Hub handles updates: remove the engine's own updater
       for (const n of ['prismlauncher_updater.exe', 'prismlauncher_updater', path.join('bin', 'prismlauncher_updater')]) await fsp.rm(path.join(root, n), { force: true });
       if (process.platform !== 'win32') await fsp.chmod(path.join(root, exeRelPath()), 0o755).catch(() => {});
-      if (task) task.progress(0.94, 'Preparando…');
+      if (task) task.progress(0.94, tr('Preparando…'));
       // Havi Hub's name on its windows and pages (engine-brand.js)
       await brandEngine(root, { iconBitmap: this.iconBitmap }).catch((e) => console.warn('engine brand:', e.message));
       await writeIntegrity(root);
@@ -606,7 +607,7 @@ class EngineManager {
   async ensure() {
     let exe = await this.exe();
     if (exe) return exe;
-    if (this.customExe()) throw Object.assign(new Error('No se encontró el motor personalizado configurado en Ajustes → Avanzado.'), { code: 'NO_ENGINE' });
+    if (this.customExe()) throw Object.assign(new UserError('No se encontró el motor personalizado configurado en Ajustes → Avanzado.'), { code: 'NO_ENGINE' });
     await this.check({ force: true });
     if (this.installing) await this.installing.catch(() => {});
     exe = await this.exe();
@@ -738,7 +739,7 @@ async function mergeAccounts(file, incoming) {
   let data = { formatVersion: 3, accounts: [] };
   if (await exists(file)) {
     data = parseLenientJson(await fsp.readFile(file, 'utf8'));
-    if (!data || !Array.isArray(data.accounts)) throw new Error('accounts.json tiene un formato inesperado; no se modificó.');
+    if (!data || !Array.isArray(data.accounts)) throw new UserError('accounts.json tiene un formato inesperado; no se modificó.');
   }
   const hasActive = data.accounts.some((a) => a.active);
   for (const acc of incoming) {

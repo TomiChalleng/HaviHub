@@ -10,6 +10,7 @@ const { cleanText } = require('../../shared/limits.js');
 const { fileUrl } = require('../urls');
 const groups = require('./groups');
 const { keyForOptions } = require('../../shared/mckeys-legacy');
+const { UserError } = require('../../shared/usertext');
 
 const ICON_EXTS = ['png', 'svg', 'jpg', 'jpeg', 'webp', 'gif', 'ico'];
 // instance.cfg key with the recipe of a generated icon ("background/symbol")
@@ -116,7 +117,7 @@ class Instances {
       const root = path.join(d, id);
       if (await exists(path.join(root, 'instance.cfg'))) return root;
     }
-    const err = new Error(`No se encontró la instancia "${id}"`);
+    const err = new UserError('No se encontró la instancia "{id}"', { id });
     err.code = 'NOT_FOUND';
     throw err;
   }
@@ -267,7 +268,7 @@ class Instances {
 
   async rename(id, name) {
     const clean = cleanText(name, 64);
-    if (!clean) throw new Error('El nombre no puede estar vacío');
+    if (!clean) throw new UserError('El nombre no puede estar vacío');
     await this.setSettings(id, { name: clean });
   }
 
@@ -314,7 +315,7 @@ class Instances {
 
   // ---- creation ----
   async create({ name, group, mcVersion, loader, loaderVersion, imagePng, iconRecipe, iconKey, extraSettings } = {}) {
-    if (!mcVersion) throw new Error('Falta la versión de Minecraft');
+    if (!mcVersion) throw new UserError('Falta la versión de Minecraft');
     const { primaryInstanceDir } = await this.ctx.dirs();
     await fsp.mkdir(primaryInstanceDir, { recursive: true });
     const displayName = String(name || '').trim() || `Minecraft ${mcVersion}`;
