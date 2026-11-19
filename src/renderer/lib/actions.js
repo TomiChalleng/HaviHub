@@ -8,6 +8,7 @@ import { instanceRecipe } from '../components/InstanceImage.jsx';
 import { iconPng, recipeKey, parseRecipe, defaultRecipe } from './instance-icons.js';
 import ProfileOptionsDialog from '../dialogs/ProfileOptionsDialog.jsx';
 import { CloneDialog, ShareDialog, MoveGroupDialog, InstallResultDialog } from '../dialogs/InstanceDialogs.jsx';
+import LaunchSettingsDialog from '../dialogs/LaunchSettingsDialog.jsx';
 
 // Upload a picture of the user's as the instance image (kept at full size).
 export async function changeImage(app, inst) {
@@ -196,4 +197,18 @@ export async function showInstallResult(app, result, title) {
     return;
   }
   await app.openDialog(InstallResultDialog, { result, title });
+}
+
+// Import a modpack or an exported instance (.mrpack / .zip) chosen by the
+// person. A Prism instance that would run something on this computer when it
+// starts is shown first (LaunchSettingsDialog). Returns the result, or null.
+export async function importArchive(app, opts = {}) {
+  let r = await call('instances.import', opts);
+  if (r && r.confirm === 'launchSettings') {
+    const choice = await app.openDialog(LaunchSettingsDialog, { file: r.path.split(/[\\/]/).pop(), settings: r.settings });
+    if (!choice) return null;
+    r = await call('instances.import', { ...opts, path: r.path, launchSettings: choice });
+  }
+  if (r) await app.refreshInstances();
+  return r;
 }

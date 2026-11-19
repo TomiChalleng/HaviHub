@@ -1003,10 +1003,18 @@ const api = {
     shell.showItemInFolder(dest);
     return dest;
   },
+  // A Prism instance that would run something on this computer when it starts
+  // (its commands, a Java of its own…): the first call returns what it found
+  // ({ confirm: 'launchSettings' }) and the page asks; the second one says
+  // whether those settings stay (launchSettings: 'keep' | 'drop').
   'instances.import': async (opts = {}) => {
     const files = opts.path ? [opts.path] : await pickFiles({ filters: [{ name: 'Modpacks / instancias', extensions: ['zip', 'mrpack'] }] });
     if (!files.length) return null;
-    const r = await need('modpacks').importArchive(files[0], opts);
+    if (opts.launchSettings !== 'keep' && opts.launchSettings !== 'drop') {
+      const settings = await need('modpacks').archiveLaunchSettings(files[0]);
+      if (settings.length) return { confirm: 'launchSettings', path: files[0], settings };
+    }
+    const r = await need('modpacks').importArchive(files[0], { group: opts.group, launchSettings: opts.launchSettings });
     emit('instances:changed', {});
     return r;
   },

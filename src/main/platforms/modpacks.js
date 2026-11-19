@@ -14,6 +14,7 @@ const { safeName, uniqueDirName, exists, writeJson, readJson } = require('../uti
 const { gameDirOf, LOADER_UIDS } = require('../prism/instances');
 const { writeMetadata, readMetadata } = require('../prism/content');
 const { safeRelPath, resolveInside, resolveRelInside } = require('../util/safepath');
+const { riskyLaunchSettings, dropLaunchSettings } = require('../prism/launchsettings');
 const { UserError, tr } = require('../../shared/usertext');
 
 const MR_DEP_TO_LOADER = { 'fabric-loader': 'fabric', 'quilt-loader': 'quilt', forge: 'forge', neoforge: 'neoforge' };
@@ -245,7 +246,22 @@ class Modpacks {
   }
 
   // ---------- import local archives ----------
-  async importArchive(file, { group } = {}) {
+  // The settings of a Prism instance in this archive that would run something
+  // on this computer (prism/launchsettings.js); [] for anything else.
+  async archiveLaunchSettings(file) {
+    const names = await zip.listEntries(file);
+    if (names.includes('modrinth.index.json') || names.includes('manifest.json')) return [];
+    const cfgEntry = names.filter((n) => /(^|\/)instance\.cfg$/.test(n)).sort((a, b) => a.length - b.length)[0];
+    const buf = cfgEntry ? await zip.readEntry(file, cfgEntry) : null;
+    if (!buf) return [];
+    let text = buf.toString('utf8');
+    if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+    return riskyLaunchSettings(new IniFile(text));
+  }
+
+  // launchSettings: 'keep' to keep what archiveLaunchSettings found (the
+  // person chose so); otherwise it is taken out.
+  async importArchive(file, { group, launchSettings } = {}) {
     const names = await zip.listEntries(file);
     if (names.includes('modrinth.index.json')) {
       return this.tasks.run(tr('Importando {file}', { file: path.basename(file) }), { kind: 'modpack' }, (task) => this.installMrpack(file, { task, group }));
@@ -265,6 +281,8 @@ class Modpacks {
         await zip.extractPrefix(file, prefix, path.join(primaryInstanceDir, id));
         const cfg = await IniFile.load(path.join(primaryInstanceDir, id, 'instance.cfg'));
         cfg.remove('uuid');
+        // what would run something on this computer stays only if the person said so
+        if (launchSettings !== 'keep') dropLaunchSettings(cfg);
         await cfg.save();
         if (group) await this.instances.setGroup(id, group);
         this.emit('instances:changed', {});

