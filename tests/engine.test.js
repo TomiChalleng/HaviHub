@@ -117,7 +117,9 @@ test('engine: downloads, installs, updates and waits for the game to close', { s
     if (u.host === 'api.github.com') {
       apiCalls++;
       const name = `PrismLauncher-Linux-Qt6-Portable-${latest}.tar.gz`;
-      return new Response(JSON.stringify({ tag_name: latest, assets: [{ name, size: 1, browser_download_url: `https://github.com/PrismLauncher/PrismLauncher/releases/download/${latest}/${name}` }] }), { status: 200 });
+      // GitHub gives each file's SHA-256 (an update is only installed with it)
+      const digest = `sha256:${require('node:crypto').createHash('sha256').update(fs.readFileSync(archives[latest])).digest('hex')}`;
+      return new Response(JSON.stringify({ tag_name: latest, assets: [{ name, size: 1, digest, browser_download_url: `https://github.com/PrismLauncher/PrismLauncher/releases/download/${latest}/${name}` }] }), { status: 200 });
     }
     if (u.host === 'github.com') {
       const v = u.pathname.split('/')[5];
@@ -447,4 +449,31 @@ test('engine: a release newer than the tested one is not installed', { skip: pro
   const older = await new EngineManager({ dir: path.join(tmp, 'engine-newer'), tasks: new TaskManager(() => {}), testedVersion: '11.1.1' }).load();
   await older.check({ force: true });
   assert.equal(await older.exe(), path.join(tmp, 'engine-newer', 'versions', '12.0.0', 'PrismLauncher'));
+});
+
+// Without GitHub's API (rate limits) there is no SHA-256 to check the file
+// against: the first engine is installed all the same (nothing can be played
+// without it), but an update waits for a check that has one.
+test('engine: an update whose SHA-256 is unknown waits', { skip: process.platform !== 'linux' || process.arch !== 'x64' }, async () => {
+  const archives = { '11.1.0': fakeRelease('11.1.0'), '11.1.1': fakeRelease('11.1.1') };
+  let latest = '11.1.0';
+  http.setFetch(async (url) => {
+    const u = new URL(url);
+    if (u.host === 'api.github.com') {
+      const name = `PrismLauncher-Linux-Qt6-Portable-${latest}.tar.gz`;
+      return new Response(JSON.stringify({ tag_name: latest, assets: [{ name, size: 1, browser_download_url: `https://github.com/PrismLauncher/PrismLauncher/releases/download/${latest}/${name}` }] }), { status: 200 });
+    }
+    if (u.host === 'github.com') {
+      const buf = fs.readFileSync(archives[u.pathname.split('/')[5]]);
+      return new Response(buf, { status: 200, headers: { 'content-length': String(buf.length) } });
+    }
+    return new Response('no', { status: 404 });
+  });
+  const dir = path.join(tmp, 'engine-nodigest');
+  const eng = await new EngineManager({ dir, tasks: new TaskManager(() => {}), testedVersion: '11.1.1' }).load();
+  assert.equal(await eng.ensure(), path.join(dir, 'versions', '11.1.0', 'PrismLauncher'));
+  latest = '11.1.1';
+  await eng.check({ force: true });
+  assert.equal(await eng.exe(), path.join(dir, 'versions', '11.1.0', 'PrismLauncher'));
+  assert.equal(fs.existsSync(path.join(dir, 'versions', '11.1.1')), false);
 });

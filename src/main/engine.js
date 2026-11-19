@@ -416,7 +416,11 @@ class EngineManager {
         // a version that failed its start check is not installed again; an
         // engine newer than the tested one (installed before that rule) is kept
         const skip = this.state.skipVersion && this.state.skipVersion === rel.version && installed;
-        if (!skip && (!installed || compareVersions(rel.version, current) > 0)) await this.install(rel);
+        // an update waits until its SHA-256 can be checked (GitHub's API gives
+        // it; the fallbacks without the API do not): only a first install goes
+        // ahead without it
+        const verifiable = (rel.assets || []).some((a) => /^sha256:[0-9a-f]{64}$/i.test(a.digest || ''));
+        if (!skip && (!installed || (compareVersions(rel.version, current) > 0 && verifiable))) await this.install(rel);
       } catch (e) {
         this.error = engineErrorText(e);
       } finally {
