@@ -25,7 +25,8 @@ const { resolvePalette, luminance, mix } = require('../shared/themes.js');
 const { brandEngine, isBranded } = require('./engine-brand');
 
 const REPO = 'PrismLauncher/PrismLauncher';
-const API_LATEST = `https://api.github.com/repos/${REPO}/releases/latest`;
+const API_RELEASES = `https://api.github.com/repos/${REPO}/releases`;
+const API_LATEST = `${API_RELEASES}/latest`;
 const LATEST_PAGE = `https://github.com/${REPO}/releases/latest`;
 const RELEASES_ATOM = `https://github.com/${REPO}/releases.atom`;
 const GH_HEADERS = { Accept: 'application/vnd.github+json', 'User-Agent': http.USER_AGENT, 'X-GitHub-Api-Version': '2022-11-28' };
@@ -47,6 +48,15 @@ function engineErrorText(e) {
 const RECHECK_MS = 6 * 3600 * 1000;
 const THEME_ID = 'havihub';
 
+// The newest Prism Launcher this version of Havi Hub was tested with. Havi
+// Hub relies on things Prism does not promise to keep (its command line, its
+// files, lines of its log, the strings engine-brand.js replaces), and the
+// start check before switching engines (checkVersion) cannot see those. So a
+// newer release is not installed until it has been checked: run
+// scripts/engine-smoke.mjs with it, then raise this. Releases up to this one
+// are still installed as they come out.
+const TESTED_VERSION = '11.1.1';
+
 // Windows antivirus scanners briefly lock freshly extracted files
 async function renameRetry(from, to) {
   for (let i = 0; ; i++) {
@@ -58,6 +68,17 @@ async function renameRetry(from, to) {
       await new Promise((r) => setTimeout(r, 250 * (i + 1)));
     }
   }
+}
+
+// A release as GitHub's API describes it.
+function releaseInfo(r) {
+  return {
+    tag: r.tag_name,
+    version: String(r.tag_name).replace(/^v/i, ''),
+    date: r.published_at || '',
+    // digest: the SHA-256 GitHub computes for each release file ("sha256:<hex>")
+    assets: (r.assets || []).map((a) => ({ name: a.name, url: a.browser_download_url, size: a.size, digest: typeof a.digest === 'string' ? a.digest : '' })),
+  };
 }
 
 function releaseAssetUrl(tag, name) {
@@ -223,7 +244,8 @@ async function prepareData(dataDir, { palette, language = 'es', showConsole, fol
 class EngineManager {
   // iconBitmap(size): Havi Hub's icon as BGRA pixels, for the engine program's own icon (Windows)
   // configFiles(): settings files worth restoring if an update has to be undone
-  constructor({ dir, tasks, emit, isRunning, customExe, iconBitmap, configFiles }) {
+  constructor({ dir, tasks, emit, isRunning, customExe, iconBitmap, configFiles, testedVersion = TESTED_VERSION }) {
+    this.testedVersion = testedVersion;
     this.configFiles = configFiles || (() => []);
     this.dir = dir;
     this.iconBitmap = iconBitmap;
@@ -232,7 +254,7 @@ class EngineManager {
     this.isRunning = isRunning || (() => false);
     this.customExe = customExe || (() => '');
     this.stateFile = path.join(dir, 'engine.json');
-    this.state = { version: '', pending: '', latest: '', lastCheck: 0, previous: '', verified: '', skipVersion: '', rolledBack: null };
+    this.state = { version: '', pending: '', latest: '', published: '', lastCheck: 0, previous: '', verified: '', skipVersion: '', rolledBack: null };
     this.checking = null;
     this.installing = null;
     this.progress = 0;
@@ -266,6 +288,8 @@ class EngineManager {
       version: this.state.version || '',
       pending: this.state.pending || '',
       latest: this.state.latest || '',
+      published: this.state.published || '',
+      tested: this.testedVersion || '',
       lastCheck: this.state.lastCheck || 0,
       checking: Boolean(this.checking),
       installing: Boolean(this.installing),
@@ -327,14 +351,7 @@ class EngineManager {
 
   async latestRelease() {
     try {
-      const r = await http.getJson(API_LATEST, { headers: GH_HEADERS, timeout: 20000, retries: 1 });
-      return {
-        tag: r.tag_name,
-        version: String(r.tag_name).replace(/^v/i, ''),
-        date: r.published_at || '',
-        // digest: the SHA-256 GitHub computes for each release file ("sha256:<hex>")
-        assets: (r.assets || []).map((a) => ({ name: a.name, url: a.browser_download_url, size: a.size, digest: typeof a.digest === 'string' ? a.digest : '' })),
-      };
+      return releaseInfo(await http.getJson(API_LATEST, { headers: GH_HEADERS, timeout: 20000, retries: 1 }));
     } catch (apiError) {
       // Without the API (rate limit 403/429, or it's down): the tag from
       // github.com itself; the files are then downloaded by their direct URLs
@@ -364,6 +381,19 @@ class EngineManager {
     return null;
   }
 
+  // The release to install: the newest one, unless it is newer than the one
+  // this Havi Hub was tested with; then that one (see TESTED_VERSION).
+  async releaseToInstall(newest) {
+    if (!this.testedVersion || compareVersions(newest.version, this.testedVersion) <= 0) return newest;
+    const tag = this.testedVersion;
+    try {
+      return releaseInfo(await http.getJson(`${API_RELEASES}/tags/${encodeURIComponent(tag)}`, { headers: GH_HEADERS, timeout: 20000, retries: 1 }));
+    } catch {
+      // without the API (rate limits) its files are still at their usual addresses
+      return { tag, version: tag, date: '', assets: [] };
+    }
+  }
+
   // Look for a newer Prism Launcher and install it in the background.
   check({ force = false } = {}) {
     if (this.customExe() || !this.supported()) return Promise.resolve(this.status());
@@ -372,14 +402,18 @@ class EngineManager {
     this.checking = (async () => {
       this.emitStatus();
       try {
-        const rel = await this.latestRelease();
+        const newest = await this.latestRelease();
+        const rel = await this.releaseToInstall(newest);
+        // latest: the newest one Havi Hub installs; published: the newest one there is
         this.state.latest = rel.version;
+        this.state.published = newest.version;
         this.state.lastCheck = Date.now();
         this.error = '';
         await this.save();
         const current = this.state.pending || this.state.version;
         const installed = current && (await exists(this.exeFor(current)));
-        // a version that failed its start check is not installed again
+        // a version that failed its start check is not installed again; an
+        // engine newer than the tested one (installed before that rule) is kept
         const skip = this.state.skipVersion && this.state.skipVersion === rel.version && installed;
         if (!skip && (!installed || compareVersions(rel.version, current) > 0)) await this.install(rel);
       } catch (e) {
@@ -742,4 +776,4 @@ function killTree(pid) {
   }
 }
 
-module.exports = { engineErrorText, probeStart, fileSizes, writeIntegrity, EngineManager, prepareData, HAVIHUB_MSA_CLIENT_ID, qtTheme, engineLanguage, compareVersions, assetNames, exeRelPath, startLogin, mergeAccounts, killTree, THEME_ID };
+module.exports = { TESTED_VERSION, engineErrorText, probeStart, fileSizes, writeIntegrity, EngineManager, prepareData, HAVIHUB_MSA_CLIENT_ID, qtTheme, engineLanguage, compareVersions, assetNames, exeRelPath, startLogin, mergeAccounts, killTree, THEME_ID };

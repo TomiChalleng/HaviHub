@@ -324,7 +324,7 @@ test('engine: a download that does not match the published SHA-256 is thrown awa
     return new Response('no', { status: 404 });
   });
   const dir = path.join(tmp, 'engine-digest');
-  const eng = await new EngineManager({ dir, tasks: new TaskManager(() => {}) }).load();
+  const eng = await new EngineManager({ dir, tasks: new TaskManager(() => {}), testedVersion: '11.2.0' }).load();
   await eng.check({ force: true });
   assert.equal(await eng.exe(), null);
   assert.match(eng.status().error || '', /SHA-256/);
@@ -406,4 +406,45 @@ test('engine: latest version without the API when it answers 403 or 429', async 
   assert.ok(seen.every((s) => /^HaviHub\//.test(s.ua)));
   assert.equal(engineErrorText(new http.HttpError(403, 'https://api.github.com/x')), 'GitHub limitó las consultas por un rato. Havi Hub lo intentará de nuevo más tarde.');
   assert.ok(!/https?:/.test(engineErrorText(new Error('HTTP 500 - https://api.github.com/x'))));
+});
+
+// Havi Hub installs a Prism release only once it has been tested with it
+// (TESTED_VERSION): a newer one waits, and the tested one is installed instead.
+test('engine: a release newer than the tested one is not installed', { skip: process.platform !== 'linux' || process.arch !== 'x64' }, async () => {
+  const crypto = require('node:crypto');
+  const archives = { '11.1.1': fakeRelease('11.1.1'), '12.0.0': fakeRelease('12.0.0') };
+  const asset = (v) => {
+    const name = `PrismLauncher-Linux-Qt6-Portable-${v}.tar.gz`;
+    const digest = `sha256:${crypto.createHash('sha256').update(fs.readFileSync(archives[v])).digest('hex')}`;
+    return { tag_name: v, assets: [{ name, size: 1, digest, browser_download_url: `https://github.com/PrismLauncher/PrismLauncher/releases/download/${v}/${name}` }] };
+  };
+  const asked = [];
+  http.setFetch(async (url) => {
+    const u = new URL(url);
+    asked.push(u.pathname);
+    if (u.host === 'api.github.com' && u.pathname.endsWith('/releases/latest')) return new Response(JSON.stringify(asset('12.0.0')), { status: 200 });
+    if (u.host === 'api.github.com' && u.pathname.endsWith('/releases/tags/11.1.1')) return new Response(JSON.stringify(asset('11.1.1')), { status: 200 });
+    if (u.host === 'github.com') {
+      const buf = fs.readFileSync(archives[u.pathname.split('/')[5]]);
+      return new Response(buf, { status: 200, headers: { 'content-length': String(buf.length) } });
+    }
+    return new Response('no', { status: 404 });
+  });
+  const dir = path.join(tmp, 'engine-tested');
+  const eng = await new EngineManager({ dir, tasks: new TaskManager(() => {}), testedVersion: '11.1.1' }).load();
+  const exe = await eng.ensure();
+  assert.equal(exe, path.join(dir, 'versions', '11.1.1', 'PrismLauncher'));
+  assert.ok(!asked.some((p) => p.includes('/download/12.0.0/')), 'the untested release is not even downloaded');
+  const st = eng.status();
+  assert.equal(st.latest, '11.1.1', 'up to date: the newest release Havi Hub installs');
+  assert.equal(st.published, '12.0.0');
+  // checking again changes nothing
+  await eng.check({ force: true });
+  assert.equal(await eng.exe(), exe);
+  // an engine newer than the tested one, installed before, is kept (never downgraded)
+  const newer = await new EngineManager({ dir: path.join(tmp, 'engine-newer'), tasks: new TaskManager(() => {}), testedVersion: '12.0.0' }).load();
+  await newer.ensure();
+  const older = await new EngineManager({ dir: path.join(tmp, 'engine-newer'), tasks: new TaskManager(() => {}), testedVersion: '11.1.1' }).load();
+  await older.check({ force: true });
+  assert.equal(await older.exe(), path.join(tmp, 'engine-newer', 'versions', '12.0.0', 'PrismLauncher'));
 });
