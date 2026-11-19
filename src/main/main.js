@@ -628,6 +628,8 @@ function toBuffer(bytes) {
 // said so: the first-start welcome asks (or, for someone updating, a dialog;
 // App.jsx), and Ajustes → Privacidad changes it. Until that answer, nothing
 // connects to them.
+const OPENABLE_FILE = /\.(png|jpe?g|gif|webp|bmp)$/i;
+
 function socialAutoload() {
   const p = config && config.get().privacy;
   return Boolean(p && p.socialAsked === true && p.socialAutoload !== false);
@@ -747,7 +749,13 @@ const api = {
   'app.openExternal': async (url) => {
     if (/^https?:\/\//i.test(url)) await shell.openExternal(url);
   },
-  'app.openPath': async (p) => shell.openPath(p),
+  // folders and pictures (the interface opens nothing else): opening any other
+  // file would run it if it is a program
+  'app.openPath': async (p) => {
+    const st = await fsp.stat(String(p || '')).catch(() => null);
+    if (!st || (!st.isDirectory() && !OPENABLE_FILE.test(String(p)))) throw new UserError('Havi Hub solo abre carpetas e imágenes.');
+    return shell.openPath(p);
+  },
   'app.showItem': async (p) => shell.showItemInFolder(p),
   'app.pickFiles': async (opts) => pickFiles(opts),
   'app.pickFolder': async (opts = {}) => {
@@ -757,10 +765,6 @@ const api = {
   'app.saveDialog': async (opts = {}) => {
     const r = await dialog.showSaveDialog(win, { defaultPath: opts.defaultPath, filters: opts.filters, title: opts.title });
     return r.canceled ? '' : r.filePath;
-  },
-  'app.readFile': async (p) => {
-    const buf = await fsp.readFile(p);
-    return new Uint8Array(buf);
   },
   'app.window': async (action) => {
     if (!win) return false;
