@@ -242,6 +242,17 @@ async function prepareData(dataDir, { palette, language = 'es', showConsole, fol
 }
 
 // ------------------------------------------------------------------ manager
+// accounts.json is put back from the copy made before the update only when
+// the current one can't be read or the newer engine changed its format: an
+// account added, or a token renewed, since that copy (which can be days old if
+// the update waited for the game to close) would be lost otherwise.
+async function accountsNeedCopy(current, copy) {
+  const now = await readJson(current, null);
+  if (!now || !Array.isArray(now.accounts)) return true;
+  const before = await readJson(copy, null);
+  return Boolean(before && before.formatVersion !== now.formatVersion);
+}
+
 class EngineManager {
   // iconBitmap(size): Havi Hub's icon as BGRA pixels, for the engine program's own icon (Windows)
   // configFiles(): settings files worth restoring if an update has to be undone
@@ -582,7 +593,9 @@ class EngineManager {
     if (usable) {
       for (const f of (snap && snap.files) || []) {
         if (f.from === this.stateFile) continue;
-        await fsp.copyFile(path.join(this.snapshotDir(), f.name), f.from).catch(() => {});
+        const copy = path.join(this.snapshotDir(), f.name);
+        if (path.basename(f.from) === 'accounts.json' && !(await accountsNeedCopy(f.from, copy))) continue;
+        await fsp.copyFile(copy, f.from).catch(() => {});
       }
       this.state.version = prev;
       this.state.pending = '';

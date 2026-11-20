@@ -385,6 +385,46 @@ test('engine update: snapshot, integrity check and rollback', { skip: process.pl
   await fsp.rm(base, { recursive: true, force: true });
 });
 
+// Going back to the engine before an update must not lose an account added
+// (or a token renewed) since the snapshot: accounts.json is only restored when
+// the newer engine left it in a format the older one may not read.
+test('engine rollback keeps accounts added after the update, unless their format changed', { skip: process.platform === 'win32' }, async () => {
+  const { writeIntegrity } = require('../src/main/engine');
+  const base = await fsp.mkdtemp(path.join(os.tmpdir(), 'havihub-engine-acc-'));
+  const acc = path.join(base, 'data', 'accounts.json');
+  await fsp.mkdir(path.dirname(acc), { recursive: true });
+  const accounts = (names, formatVersion = 3) => JSON.stringify({ formatVersion, accounts: names.map((n) => ({ type: 'MSA', profile: { id: n, name: n } })) });
+  const putVersion = async (v, script) => {
+    const dir = path.join(base, 'engine', 'versions', v);
+    await fsp.mkdir(dir, { recursive: true });
+    await fsp.writeFile(path.join(dir, 'PrismLauncher'), `#!/bin/sh\n${script}\n#${'x'.repeat(1100)}\n`, { mode: 0o755 });
+    await writeIntegrity(dir);
+  };
+  const mk = () => new EngineManager({ dir: path.join(base, 'engine'), emit: () => {}, configFiles: () => [acc] });
+  const updateAndFail = async (after) => {
+    await putVersion('9.0', 'exit 0');
+    const eng = await mk().load();
+    eng.state.version = '9.0';
+    eng.state.verified = '9.0';
+    await fsp.writeFile(acc, accounts(['uno']));
+    assert.equal(await eng.snapshot(), '9.0');
+    await putVersion('9.1', 'kill -SEGV $$');
+    eng.state.version = '9.1';
+    await eng.save();
+    await fsp.writeFile(acc, after);
+    const rb = await (await mk().load()).verifyOnStart();
+    assert.equal(rb.to, '9.0');
+    return JSON.parse(await fsp.readFile(acc, 'utf8'));
+  };
+  // an account added while the new engine was in use stays
+  assert.deepEqual((await updateAndFail(accounts(['uno', 'dos']))).accounts.map((a) => a.profile.name), ['uno', 'dos']);
+  // the new engine wrote another format: the copy from before comes back
+  assert.deepEqual((await updateAndFail(accounts(['uno', 'dos'], 4))).accounts.map((a) => a.profile.name), ['uno']);
+  // a file that can't be read: the copy comes back too
+  assert.deepEqual((await updateAndFail('{ broken')).accounts.map((a) => a.profile.name), ['uno']);
+  await fsp.rm(base, { recursive: true, force: true });
+});
+
 // GitHub's API rate limit (403/429): the tag comes from github.com itself
 test('engine: latest version without the API when it answers 403 or 429', async () => {
   const { engineErrorText } = require('../src/main/engine');
