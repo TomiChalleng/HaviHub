@@ -55,14 +55,6 @@ function isInside(child, parent) {
   return c.startsWith(p + path.sep);
 }
 
-async function realOrSelf(p) {
-  try {
-    return await fsp.realpath(p);
-  } catch {
-    return path.resolve(p);
-  }
-}
-
 // The deepest part of `p` that exists, resolved through links.
 async function realAncestor(p) {
   let cur = path.resolve(p);
@@ -85,14 +77,28 @@ async function isLink(p) {
   }
 }
 
+// A path as it really is: its deepest existing part resolved through links
+// (and, on Windows, short 8.3 names such as RUNNER~1 written out in full),
+// then the rest. Both sides of a comparison go through it, whether they
+// exist yet or not: a folder that is still to be created would otherwise be
+// compared as written against its resolved parent, and everything inside a
+// folder reached through a link or a short name would look outside it.
+async function realPath(p) {
+  const { real, rest } = await realAncestor(p);
+  return path.join(real, rest);
+}
+
+function samePath(a, b) {
+  return process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b;
+}
+
 // `target` must stay strictly inside `root` after following any link in
 // between, and must not itself be a link.
 async function assertInside(root, target) {
-  const rootReal = await realOrSelf(root);
   if (!isInside(target, root)) throw new UnsafePathError(target);
-  const { real, rest } = await realAncestor(path.dirname(target));
-  const parentReal = path.join(real, rest);
-  if (parentReal !== rootReal && !isInside(parentReal, rootReal)) throw new UnsafePathError(target);
+  const rootReal = await realPath(root);
+  const parentReal = await realPath(path.dirname(target));
+  if (!samePath(parentReal, rootReal) && !isInside(parentReal, rootReal)) throw new UnsafePathError(target);
   if (await isLink(target)) throw new UnsafePathError(target);
   return target;
 }
