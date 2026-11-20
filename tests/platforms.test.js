@@ -353,3 +353,28 @@ test('modpack keys: asked when the pack brings its own, applied when it does not
     await cfg.replaceKey('inGameDefaults', before);
   }
 });
+
+// Minecraft upgrades an options.txt from its "version:" line; with none it
+// runs the upgrade for pre-1.13 numeric keys, which fails on
+// "key.keyboard.g" and throws the whole file away. Havi Hub's files say they
+// are current; one the game saved keeps its own version.
+test('options.txt written by Havi Hub says which version it is', async () => {
+  const before = cfg.get().inGameDefaults;
+  await cfg.replaceKey('inGameDefaults', { ...before, enabled: true, keys: { 'key.drop': 'key.keyboard.g' } });
+  try {
+    const id = await instances.create({ name: 'Options version', mcVersion: '26.2', loader: 'fabric', loaderVersion: '0.20.1' });
+    const file = path.join((await instances.get(id)).gameDir, 'options.txt');
+    const lines = fs.readFileSync(file, 'utf8').split('\n');
+    assert.equal(lines[0], 'version:999999');
+    assert.ok(lines.includes('key_key.drop:key.keyboard.g'));
+    // a file the game saved: its version stays
+    fs.writeFileSync(file, 'version:4440\nfov:0.0\nkey_key.drop:key.keyboard.q\n');
+    assert.equal(await instances.applyKeysTo(id), true);
+    const after = fs.readFileSync(file, 'utf8');
+    assert.match(after, /^version:4440$/m);
+    assert.doesNotMatch(after, /999999/);
+    assert.match(after, /^key_key\.drop:key\.keyboard\.g$/m);
+  } finally {
+    await cfg.replaceKey('inGameDefaults', before);
+  }
+});

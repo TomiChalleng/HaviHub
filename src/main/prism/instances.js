@@ -87,9 +87,21 @@ async function readOptions(file) {
   return lines;
 }
 
+// Minecraft upgrades an options.txt from the version it says it was saved
+// in (its "version:" line). With none, it assumes the oldest one and runs
+// every upgrade, among them the one for the numeric keys used before 1.13:
+// it reads "key.keyboard.g" as a number, fails, and throws the whole file
+// away ("Failed to load options"), so the profile starts with none of Havi
+// Hub's options or keys, and with the game's welcome screen. Havi Hub
+// writes options in the current format, so a file without that line says
+// it is already current: a version no Minecraft has reached, so nothing is
+// upgraded. The game writes its own version the next time it saves the file.
+const OPTIONS_VERSION = '999999';
+
 async function writeOptions(file, lines) {
   await fsp.mkdir(path.dirname(file), { recursive: true });
-  await fsp.writeFile(file, [...lines].map(([k, v]) => `${k}:${v}`).join('\n') + '\n');
+  const out = lines.has('version') ? lines : new Map([['version', OPTIONS_VERSION], ...lines]);
+  await fsp.writeFile(file, [...out].map(([k, v]) => `${k}:${v}`).join('\n') + '\n');
 }
 
 // key bindings the user changed ('' = keep Minecraft's) in this version's format
