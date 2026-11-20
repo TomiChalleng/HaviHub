@@ -1,7 +1,7 @@
 // Instance actions shared by the library cards, context menus and the instance page.
 import BlockedFilesDialog from '../dialogs/BlockedFilesDialog.jsx';
 import { call } from './api.js';
-import { t } from './i18n.js';
+import { t, tm } from './i18n.js';
 import ImageDialog from '../dialogs/ImageDialog.jsx';
 import IconEditorDialog from '../dialogs/IconEditorDialog.jsx';
 import { instanceRecipe } from '../components/InstanceImage.jsx';
@@ -144,7 +144,7 @@ export async function repairInstance(app, inst) {
     lines.push(t('{n} archivos verificados correctamente.', { n: r.ok }));
     if (r.redownloaded.length) lines.push(t('Se volvieron a descargar: {list}', { list: r.redownloaded.join(', ') }));
     if (r.removedMetadata.length) lines.push(t('Metadatos huérfanos eliminados: {list}', { list: r.removedMetadata.join(', ') }));
-    if (r.problems.length) lines.push(t('Problemas: {list}', { list: r.problems.join('; ') }));
+    if (r.problems.length) lines.push(t('Problemas: {list}', { list: r.problems.map((p) => (typeof p === 'string' ? p : `${p.file}: ${tm(p.error)}`)).join('; ') }));
     lines.push(t('Las librerías nativas se regenerarán al iniciar.'));
     await app.confirm({ title: t('Perfil reparado'), message: lines.join('\n\n'), confirmLabel: t('Listo'), cancelLabel: t('Cerrar'), icon: 'wrench' });
     app.bumpContent();

@@ -52,7 +52,7 @@ const { Sharing } = require('./sharing');
 const { startWindowHelper } = require('./winhelper');
 const { resolvePalette } = require('../shared/themes.js');
 const { LIMITS, cleanText } = require('../shared/limits.js');
-const { UserError, tr } = require('../shared/usertext');
+const { UserError, tr, textOf } = require('../shared/usertext');
 
 protocol.registerSchemesAsPrivileged([
   // codeCache: the page's compiled code is kept between starts, so later starts skip that work
@@ -1279,7 +1279,7 @@ async function repairInstance(id) {
         task.progress((k + i / Math.max(1, entries.length)) / kinds.length, tr('Revisando {file}', { file: m.filename }));
         const file = await resolveInside(folder, m.filename).catch(() => null);
         if (!file) {
-          report.problems.push(`${m.filename}: ruta inválida`);
+          report.problems.push({ file: m.filename, error: tr('ruta inválida') });
           continue;
         }
         const disabled = `${file}.disabled`;
@@ -1308,13 +1308,13 @@ async function repairInstance(id) {
             await http.download(url, present || file, { hash: expected, hashAlgo: algo || 'sha1' });
             report.redownloaded.push(m.filename);
           } catch (e) {
-            report.problems.push(`${m.filename}: ${e.message}`);
+            report.problems.push({ file: m.filename, error: textOf(e) });
           }
         } else if (!present) {
           await fsp.rm(m.metaFile, { force: true });
           report.removedMetadata.push(m.filename);
         } else {
-          report.problems.push(`${m.filename}: no coincide con su hash y no se puede volver a descargar`);
+          report.problems.push({ file: m.filename, error: tr('no coincide con su hash y no se puede volver a descargar') });
         }
       }
       void indexDir;

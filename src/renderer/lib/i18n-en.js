@@ -1396,5 +1396,8 @@ export default {
  "Puedes cambiarlo después con \"Aplicar las teclas a todos los perfiles\", en Ajustes → Minecraft → Teclas.": "You can change it later with \"Apply the keys to every profile\", in Settings → Minecraft → Key Binding.",
  "Las del modpack": "The modpack’s",
  "Mis teclas": "My key bindings",
- "Tus teclas quedaron puestas en {name}": "Your key bindings are now set in {name}"
+ "Tus teclas quedaron puestas en {name}": "Your key bindings are now set in {name}",
+ "ruta inválida": "invalid path",
+ "no coincide con su hash y no se puede volver a descargar": "does not match its hash and cannot be downloaded again",
+ "Ruta inválida: {path}": "Invalid path: {path}"
 };

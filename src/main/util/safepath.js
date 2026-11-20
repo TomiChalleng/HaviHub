@@ -5,14 +5,15 @@
 // is refused instead of being cleaned up, so nothing outside is touched.
 const fsp = require('node:fs/promises');
 const path = require('node:path');
+const { UserError } = require('../../shared/usertext');
 
 const WIN_RESERVED = /^(con|prn|aux|nul|com[0-9¹²³]|lpt[0-9¹²³]|conin\$|conout\$|clock\$)(\..*)?$/i;
 // eslint-disable-next-line no-control-regex
 const CONTROL = /[\u0000-\u001f\u007f]/;
 
-class UnsafePathError extends Error {
+class UnsafePathError extends UserError {
   constructor(what) {
-    super(`Ruta inválida: ${String(what).slice(0, 120)}`);
+    super('Ruta inválida: {path}', { path: String(what).slice(0, 120) });
     this.code = 'EUNSAFEPATH';
   }
 }
