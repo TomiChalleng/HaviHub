@@ -17,6 +17,9 @@ concurrency:
 
 jobs:
   merge:
+    # not in a fork: there a branch is someone's contribution, waiting for a
+    # pull request, and merging it into the fork's main would delete it
+    if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     env:
       BRANCH: ${{ github.ref_name }}
