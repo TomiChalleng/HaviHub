@@ -1,0 +1,88 @@
+name: Compilar versión de prueba
+
+# Only in this branch: builds the Windows portable .exe of the pull request
+# (auditoria-seguridad) so it can be tried without building it by hand, and
+# publishes it as a pre-release of this fork. Not part of the pull request.
+on:
+  push:
+    branches: [compilar-prueba]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install ziglang
+      - run: npm ci
+      # the tests are reported (job "pruebas-windows" below), not a reason to skip the build
+      - run: npm run build:helper
+      - run: npm run build
+      - run: node scripts/dist-win.cjs portable
+      - name: Name the test build
+        shell: bash
+        run: cp release/HaviHub-*-portable.exe HaviHub-prueba-PR1.exe && sha256sum HaviHub-prueba-PR1.exe | tee SHA256.txt
+      - uses: actions/upload-artifact@v6
+        with:
+          name: HaviHub-prueba-PR1
+          compression-level: 0
+          path: HaviHub-prueba-PR1.exe
+      - name: Publish as a pre-release of this fork
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete prueba-pr1 --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
+          gh release create prueba-pr1 HaviHub-prueba-PR1.exe \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "Havi Hub: versión de prueba del PR #1" \
+            --notes "Versión portable para probar el PR #1 (rama auditoria-seguridad) en Windows. No es una versión oficial de Havi Hub. SHA-256: $(cut -d' ' -f1 SHA256.txt)"
+
+  # The same version as an AppImage for Linux, added to that pre-release
+  linux:
+    needs: windows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx electron-builder --linux AppImage --x64 --publish never
+      - name: Add it to the pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp release/*.AppImage HaviHub-prueba-PR1.AppImage
+          gh release upload prueba-pr1 HaviHub-prueba-PR1.AppImage --repo "$GITHUB_REPOSITORY" --clobber
+
+  # The unit tests on Windows, for this branch and for the original it is
+  # based on (b7ddee8), to tell apart what this branch changes from what
+  # already failed there: the project's own CI runs them on Linux only.
+  pruebas-windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ref: [rama, original]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.ref == 'original' && 'b7ddee8b737dad933a2d2637b9d175fc54fa0c9f' || github.sha }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
