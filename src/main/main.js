@@ -950,6 +950,8 @@ const api = {
   },
   'instances.stop': async (id) => need('launcher').stop(id),
   'instances.applyKeys': async () => need('instances').applyKeys((id) => need('launcher').isRunning(id)),
+  // a modpack that brought its own key bindings: the person chose theirs (modpacks.js, packKeys)
+  'instances.applyKeysTo': async (id) => need('instances').applyKeysTo(id),
   'instances.running': async () => (services && services.launcher ? services.launcher.runningIds() : []),
   'instances.shortcut': async (id) => {
     const inst = await need('instances').get(id);

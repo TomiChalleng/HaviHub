@@ -390,15 +390,32 @@ class Instances {
         skipped.push(inst.name);
         continue;
       }
-      const gameDir = gameDirOf(inst.root);
-      const file = path.join(gameDir, 'options.txt');
-      const lines = await readOptions(file);
-      if (!setKeyLines(lines, keys, inst.mcVersion)) continue;
-      await fsp.mkdir(gameDir, { recursive: true });
-      await writeOptions(file, lines);
-      count++;
+      if (await this.writeKeys(inst, keys)) count++;
     }
     return { count, skipped };
+  }
+
+  // The customized key bindings into one profile's options.txt (the rest of
+  // its options stay). False when there was nothing to change.
+  async applyKeysTo(id) {
+    const keys = (this.appConfig.get().inGameDefaults || {}).keys || {};
+    return this.writeKeys(await this.get(id), keys);
+  }
+
+  async writeKeys(inst, keys) {
+    const gameDir = gameDirOf(inst.root);
+    const file = path.join(gameDir, 'options.txt');
+    const lines = await readOptions(file);
+    if (!setKeyLines(lines, keys, inst.mcVersion)) return false;
+    await fsp.mkdir(gameDir, { recursive: true });
+    await writeOptions(file, lines);
+    return true;
+  }
+
+  // Whether the person has key bindings of their own (Ajustes → Minecraft → Teclas)
+  hasCustomKeys() {
+    const d = this.appConfig.get().inGameDefaults || {};
+    return Boolean(d.enabled) && Object.entries(d.keys || {}).some(([id, key]) => key && /^key\./.test(id));
   }
 
   // ---- image ----

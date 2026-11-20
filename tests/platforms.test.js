@@ -306,3 +306,50 @@ test('prism zip: settings that run something are found, and dropped unless kept'
   const mr = path.join(tmp, 'fo.mrpack');
   if (fs.existsSync(mr)) assert.deepEqual(await modpacks.archiveLaunchSettings(mr), []);
 });
+
+// A modpack that brings its own options.txt replaces the one Havi Hub wrote
+// with the person's key bindings. With keys of its own, the person is asked
+// ('modpack:keys'); without them, the person's are applied on top.
+test('modpack keys: asked when the pack brings its own, applied when it does not', async () => {
+  const events = [];
+  const mp = new Modpacks({ ctxProvider: () => ctx, instances, tasks, appConfig: cfg, emit: (ch, x) => events.push([ch, x]) });
+  const before = cfg.get().inGameDefaults;
+  await cfg.replaceKey('inGameDefaults', { ...before, enabled: true, keys: { 'key.drop': 'key.keyboard.g' } });
+  const pack = async (name, options) => {
+    const file = path.join(tmp, `${name}.mrpack`);
+    const index = { formatVersion: 1, game: 'minecraft', versionId: '1', name, dependencies: { minecraft: '26.2', 'fabric-loader': '0.20.1' }, files: [] };
+    const items = [{ name: 'modrinth.index.json', buffer: Buffer.from(JSON.stringify(index)) }];
+    if (options !== null) items.push({ name: 'overrides/options.txt', buffer: Buffer.from(options) });
+    await require('../src/main/util/zip').writeZip(file, items);
+    return file;
+  };
+  const optionsOf = async (id) => fs.readFileSync(path.join((await instances.get(id)).gameDir, 'options.txt'), 'utf8');
+  try {
+    // the pack's own keys: asked, nothing changed yet
+    const a = await mp.installMrpack(await pack('Keys pack', 'fov:0.0\nkey_key.drop:key.keyboard.q\n'), {});
+    assert.equal(a.keys, 'ask');
+    assert.deepEqual(events.filter(([ch]) => ch === 'modpack:keys').map(([, x]) => [x.id, x.name]), [[a.id, 'Keys pack']]);
+    assert.match(await optionsOf(a.id), /key_key\.drop:key\.keyboard\.q/);
+    // the person chose theirs: their keys, the pack's other options stay
+    assert.equal(await instances.applyKeysTo(a.id), true);
+    const after = await optionsOf(a.id);
+    assert.match(after, /key_key\.drop:key\.keyboard\.g/);
+    assert.match(after, /fov:0\.0/);
+    // options without keys: the person's are applied, nobody is asked
+    events.length = 0;
+    const b = await mp.installMrpack(await pack('Options pack', 'fov:0.5\n'), {});
+    assert.equal(b.keys, 'applied');
+    assert.equal(events.filter(([ch]) => ch === 'modpack:keys').length, 0);
+    assert.match(await optionsOf(b.id), /key_key\.drop:key\.keyboard\.g/);
+    // no options.txt in the pack: the one Havi Hub wrote stays, nothing to ask
+    const c = await mp.installMrpack(await pack('Plain pack', null), {});
+    assert.equal(c.keys, null);
+    assert.match(await optionsOf(c.id), /key_key\.drop:key\.keyboard\.g/);
+    // no keys of the person's own: nothing to ask
+    await cfg.replaceKey('inGameDefaults', { ...before, enabled: true, keys: {} });
+    const d = await mp.installMrpack(await pack('Keys pack 2', 'key_key.drop:key.keyboard.q\n'), {});
+    assert.equal(d.keys, null);
+  } finally {
+    await cfg.replaceKey('inGameDefaults', before);
+  }
+});

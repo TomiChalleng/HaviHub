@@ -156,8 +156,9 @@ class Modpacks {
       await zip.extractPrefix(file, 'overrides/', game);
       await zip.extractPrefix(file, 'client-overrides/', game);
       await this.instances.writeDefaultOptions(game);
+      const keys = await this.packKeys(id, file, ['overrides/', 'client-overrides/'], packName);
       this.emit('instances:changed', {});
-      return { id, failed, blocked: [] };
+      return { id, failed, blocked: [], keys };
     } catch (e) {
       e.instanceId = id;
       throw e;
@@ -241,11 +242,33 @@ class Modpacks {
     const overrides = (manifest.overrides || 'overrides').replace(/\/?$/, '/');
     await zip.extractPrefix(file, overrides, game);
     await this.instances.writeDefaultOptions(game);
+    const keys = await this.packKeys(id, file, [overrides], packName);
     this.emit('instances:changed', {});
-    return { id, blocked, failed };
+    return { id, blocked, failed, keys };
   }
 
   // ---------- import local archives ----------
+  // Key bindings of a freshly installed modpack. Havi Hub writes the
+  // person's own (Ajustes → Minecraft → Teclas) when it creates the profile,
+  // but a pack that brings its own options.txt replaces that file. If that
+  // file has key bindings (chosen by the pack's author so its mods don't
+  // clash), the person chooses whose to use: 'ask' here, then the
+  // 'modpack:keys' event; the page answers with instances.applyKeysTo.
+  // Otherwise the person's are applied on top of the pack's other options.
+  async packKeys(id, file, prefixes, name) {
+    if (!this.instances.hasCustomKeys()) return null;
+    const names = await zip.listEntries(file);
+    if (!prefixes.some((p) => names.includes(`${p}options.txt`))) return null;
+    const inst = await this.instances.get(id);
+    const text = await fsp.readFile(path.join(gameDirOf(inst.root), 'options.txt'), 'utf8').catch(() => '');
+    if (!/^key_/m.test(text)) {
+      await this.instances.applyKeysTo(id);
+      return 'applied';
+    }
+    this.emit('modpack:keys', { id, name: name || inst.name });
+    return 'ask';
+  }
+
   // The settings of a Prism instance in this archive that would run something
   // on this computer (prism/launchsettings.js); [] for anything else.
   async archiveLaunchSettings(file) {

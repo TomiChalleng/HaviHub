@@ -1389,5 +1389,12 @@ export default {
  "Ya tienes una cuenta offline llamada {name}.": "You already have an offline account named {name}.",
  "accounts.json tiene un formato inesperado; no se modificó.": "accounts.json has an unexpected format; it was not changed.",
  "{name} tiene que iniciar sesión de nuevo.": "{name} has to sign in again.",
- "{n} archivos": "{n} files"
+ "{n} archivos": "{n} files",
+ "¿Qué teclas quieres usar en {name}?": "Which key bindings do you want in {name}?",
+ "Este modpack trae sus propias teclas, elegidas por su autor para que sus mods no choquen entre sí.": "This modpack brings its own key bindings, chosen by its author so its mods do not clash.",
+ "Mis teclas: se usan las que cambiaste en Ajustes → Minecraft → Teclas, y las demás quedan como las dejó el autor.": "My key bindings: the ones you changed in Settings → Minecraft → Key Binding are used, and the rest stay as the author left them.",
+ "Puedes cambiarlo después con \"Aplicar las teclas a todos los perfiles\", en Ajustes → Minecraft → Teclas.": "You can change it later with \"Apply the keys to every profile\", in Settings → Minecraft → Key Binding.",
+ "Las del modpack": "The modpack’s",
+ "Mis teclas": "My key bindings",
+ "Tus teclas quedaron puestas en {name}": "Your key bindings are now set in {name}"
 };
