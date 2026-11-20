@@ -14,7 +14,7 @@ const { safeName, uniqueDirName, exists, writeJson, readJson } = require('../uti
 const { gameDirOf, LOADER_UIDS } = require('../prism/instances');
 const { writeMetadata, readMetadata } = require('../prism/content');
 const { safeRelPath, resolveInside, resolveRelInside } = require('../util/safepath');
-const { riskyLaunchSettings, dropLaunchSettings } = require('../prism/launchsettings');
+const { riskyLaunchSettings, dropLaunchSettings, personalSettings, dropPersonalSettings } = require('../prism/launchsettings');
 const { UserError, tr } = require('../../shared/usertext');
 
 const MR_DEP_TO_LOADER = { 'fabric-loader': 'fabric', 'quilt-loader': 'quilt', forge: 'forge', neoforge: 'neoforge' };
@@ -316,7 +316,16 @@ class Modpacks {
   }
 
   // ---------- export ----------
-  async exportZip(id, dest, { includeWorlds = true, includeScreenshots = false } = {}) {
+  // What exportZip leaves out unless asked (personalSettings in launchsettings.js)
+  async exportSettings(id) {
+    const root = await this.instances.locate(id);
+    const cfg = await IniFile.load(path.join(root, 'instance.cfg')).catch(() => null);
+    return cfg ? personalSettings(cfg) : [];
+  }
+
+  // personalSettings: 'keep' to share this computer's commands, Java and
+  // variables as they are; otherwise the exported instance.cfg goes without them
+  async exportZip(id, dest, { includeWorlds = true, includeScreenshots = false, personalSettings: personal = 'drop' } = {}) {
     const root = await this.instances.locate(id);
     const gameRel = path.relative(root, gameDirOf(root)).split(path.sep).join('/');
     const skip = [`${gameRel}/logs`, `${gameRel}/crash-reports`, 'natives', `${gameRel}/.cache`, `${gameRel}/backups`];
@@ -324,6 +333,13 @@ class Modpacks {
     if (!includeScreenshots) skip.push(`${gameRel}/screenshots`);
     return this.tasks.run(tr('Exportando {name}', { name: id }), { kind: 'export', instanceId: id }, async () => {
       const items = await zip.collectFiles(root, '', (rel) => skip.some((s) => rel === s || rel.startsWith(`${s}/`)) || rel === 'logs.zip' || rel.endsWith('.part'));
+      if (personal !== 'keep') {
+        const at = items.findIndex((it) => it.name === 'instance.cfg' && it.abs);
+        if (at >= 0) {
+          const cfg = await IniFile.load(items[at].abs);
+          if (dropPersonalSettings(cfg)) items[at] = { name: 'instance.cfg', buffer: Buffer.from(cfg.toString(), 'utf8') };
+        }
+      }
       await zip.writeZip(dest, items);
       return dest;
     });

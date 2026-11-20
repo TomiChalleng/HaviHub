@@ -41,7 +41,8 @@ test.before(async () => {
   modpacks = new Modpacks({ ctxProvider: () => ctx, instances, tasks, appConfig: cfg, emit: () => {} });
 });
 
-test.after(() => fsp.rm(tmp, { recursive: true, force: true }));
+// Windows can still hold a file of the last import or export for a moment: retry
+test.after(() => fsp.rm(tmp, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }));
 
 test('search: modrinth, curseforge and both (deduplicated)', async () => {
   const mr = await platforms.search({ source: 'modrinth', type: 'mod', query: '' });
@@ -305,6 +306,39 @@ test('prism zip: settings that run something are found, and dropped unless kept'
   // modpacks have no instance.cfg: nothing to ask
   const mr = path.join(tmp, 'fo.mrpack');
   if (fs.existsSync(mr)) assert.deepEqual(await modpacks.archiveLaunchSettings(mr), []);
+});
+
+// Sharing a profile as a Prism .zip: its commands, its own Java and its
+// environment variables are this computer's (and can hold tokens), so they are
+// left out unless the person chooses to share them.
+test('prism zip export: commands, Java and variables of this computer stay out unless shared', async () => {
+  const { riskyLaunchSettings } = require('../src/main/prism/launchsettings');
+  // a profile with some of its own
+  const created = await modpacks.importArchive(path.join(tmp, 'shared-instance.zip'), { launchSettings: 'keep' });
+  const root = (await instances.get(created.id)).root;
+  const own = await IniFile.load(path.join(root, 'instance.cfg'));
+  own.set('OverrideJavaLocation', true);
+  own.set('JavaPath', '/home/someone/jdks/21/bin/java');
+  own.set('Env', JSON.stringify({ LD_PRELOAD: '/tmp/x.so', GITHUB_TOKEN: 'ghp_secret' }));
+  await own.save();
+  assert.deepEqual((await modpacks.exportSettings(created.id)).map((f) => f.key), ['PreLaunchCommand', 'JavaPath', 'JvmArgs', 'Env LD_PRELOAD', 'Env GITHUB_TOKEN']);
+  const cfgOf = async (zipFile) => {
+    const names = await require('../src/main/util/zip').listEntries(zipFile);
+    return new IniFile((await require('../src/main/util/zip').readEntry(zipFile, names.find((n) => /(^|\/)instance\.cfg$/.test(n)))).toString('utf8'));
+  };
+  // by default: none of them, the rest of the settings stay
+  const out = path.join(tmp, 'export-drop.zip');
+  await modpacks.exportZip(created.id, out, {});
+  const c1 = await cfgOf(out);
+  assert.deepEqual(riskyLaunchSettings(c1), []);
+  assert.equal(c1.get('JavaPath', ''), '');
+  assert.doesNotMatch(String(c1.get('Env', '')), /GITHUB_TOKEN|LD_PRELOAD/);
+  assert.equal(String(c1.get('MaxMemAlloc')), '4096');
+  assert.match(fs.readFileSync(path.join(root, 'instance.cfg'), 'utf8'), /ghp_secret/, 'the profile itself is not changed');
+  // shared on purpose: as they are
+  const kept = path.join(tmp, 'export-keep.zip');
+  await modpacks.exportZip(created.id, kept, { personalSettings: 'keep' });
+  assert.match(String((await cfgOf(kept)).get('Env', '')), /ghp_secret/);
 });
 
 // A modpack that brings its own options.txt replaces the one Havi Hub wrote

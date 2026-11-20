@@ -51,4 +51,22 @@ function dropLaunchSettings(cfg) {
   return found.length;
 }
 
-module.exports = { riskyLaunchSettings, dropLaunchSettings };
+// What a profile shared as a Prism .zip would take of this computer: all of
+// the above, and every environment variable (they often hold tokens or
+// paths of this computer). Left out of the export unless the person chooses.
+function personalSettings(cfg) {
+  const found = riskyLaunchSettings(cfg);
+  if (isOn(cfg, 'OverrideEnv')) for (const r of parseEnv(valueOf(cfg, 'Env'))) if (!found.some((f) => f.key === `Env ${r.name}`)) found.push({ key: `Env ${r.name}`, value: r.value });
+  return found;
+}
+
+function dropPersonalSettings(cfg) {
+  const n = personalSettings(cfg).length;
+  if (!n) return 0;
+  dropLaunchSettings(cfg);
+  cfg.remove('Env');
+  cfg.set('OverrideEnv', false);
+  return n;
+}
+
+module.exports = { riskyLaunchSettings, dropLaunchSettings, personalSettings, dropPersonalSettings };

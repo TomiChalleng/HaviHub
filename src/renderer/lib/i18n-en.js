@@ -1399,5 +1399,8 @@ export default {
  "Tus teclas quedaron puestas en {name}": "Your key bindings are now set in {name}",
  "ruta inválida": "invalid path",
  "no coincide con su hash y no se puede volver a descargar": "does not match its hash and cannot be downloaded again",
- "Ruta inválida: {path}": "Invalid path: {path}"
+ "Ruta inválida: {path}": "Invalid path: {path}",
+ "Incluir mis comandos y variables de entorno": "Include my commands and environment variables",
+ "variable {name}": "variable {name}",
+ "Son de tu PC y pueden tener datos tuyos, como contraseñas o carpetas. Sin marcar, el perfil se comparte sin ellos: {list}.": "They belong to your PC and can hold your data, such as passwords or folders. Unchecked, the profile is shared without them: {list}."
 };

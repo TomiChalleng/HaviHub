@@ -994,6 +994,8 @@ const api = {
     const r = await installSystemMenuEntry({ appImage: process.env.APPIMAGE, iconFile });
     return { ...r, ...(await api['linux.menuState']()) };
   },
+  // what a Prism .zip of this profile would carry of this computer (the share dialog asks)
+  'instances.exportSettings': async (id) => need('modpacks').exportSettings(id),
   'instances.export': async (id, opts = {}) => {
     const inst = await need('instances').get(id);
     const ext = opts.format === 'mrpack' ? 'mrpack' : 'zip';
@@ -1005,7 +1007,7 @@ const api = {
     if (!dest) return '';
     if (ext === 'mrpack') await need('modpacks').exportMrpack(id, dest, opts);
     else if (curse) await need('modpacks').exportCurseZip(id, dest, { name: cleanText(opts.name, LIMITS.instanceName), version: cleanText(opts.version, LIMITS.version) || '1.0.0', author: cleanText(opts.author, 64), includeWorlds: Boolean(opts.includeWorlds) });
-    else await need('modpacks').exportZip(id, dest, opts);
+    else await need('modpacks').exportZip(id, dest, { includeWorlds: opts.includeWorlds !== false, personalSettings: opts.personalSettings === 'keep' ? 'keep' : 'drop' });
     shell.showItemInFolder(dest);
     return dest;
   },
