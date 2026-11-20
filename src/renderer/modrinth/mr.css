@@ -1399,23 +1399,6 @@ html[data-layout='modrinth'] .mr-select {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.mr-prev {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin-top: 0.125rem;
-  padding: 0 0.4rem;
-  border-radius: 999px;
-  border: 1px dashed var(--surface3);
-  color: var(--text2);
-  font-size: 0.65rem;
-  line-height: 1.2rem;
-}
-.mr-prev:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
 .mr-td-actions {
   display: flex;
   align-items: center;
