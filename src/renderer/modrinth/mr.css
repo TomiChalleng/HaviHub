@@ -43,7 +43,8 @@ html[data-layout='modrinth'] {
   --mr-line: var(--mr-surface-5);
   --mr-overlay: linear-gradient(to bottom, rgba(29, 48, 43, 0.52) 0%, rgba(14, 21, 26, 0.95) 100%);
 }
-/* the shared pages and dialogs keep their own (CurseForge layout) sizes */
+/* what is drawn outside the layout's own components (dialogs, the shared
+   pages) gets its sizes in mr-shared.css */
 html[data-layout='modrinth'] body {
   font-family: var(--font);
   font-size: 0.8rem;
@@ -547,7 +548,6 @@ button.mr-crumb:hover {
 /* the shared pages (project, servers, skins, screenshots, help) inside the panel */
 html[data-layout='modrinth'] .mr-viewport > .page {
   padding: 1.5rem;
-  font-size: 0.8rem;
 }
 
 /* right sidebar (app/shell/sidebar) */
@@ -939,7 +939,6 @@ html[data-layout='modrinth'] .mr-viewport > .page {
 .mr-settings-body {
   height: min(65vh, 40rem);
   min-height: 0;
-  font-size: 0.8rem;
 }
 .mr-settings-window .settings {
   height: 100%;
@@ -2092,10 +2091,6 @@ html[data-layout='modrinth'] .mr-viewport > .page {
   min-width: 0;
   padding: 1rem 1.5rem 1.5rem;
 }
-/* the shared tabs (worlds, logs, screenshots) inside this layout */
-.mr-inst-body > *:not(.mr-content) {
-  font-size: 0.8rem;
-}
 
 /* ------------------------------------------------------------ content (layouts/shared/content-tab) */
 .mr-content {
@@ -2414,25 +2409,6 @@ html[data-layout='modrinth'] .mr-select {
   flex-wrap: wrap;
   gap: 0.5rem;
 }
-html[data-layout='modrinth'] .mr-browse-bar .pills {
-  gap: 0;
-  padding: 0.25rem;
-  border-radius: 999px;
-  background: var(--mr-surface-3);
-  border: 1px solid var(--mr-surface-4);
-}
-html[data-layout='modrinth'] .mr-browse-bar .pill {
-  height: 1.75rem;
-  padding: 0 0.75rem;
-  border-radius: 999px;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--mr-secondary);
-}
-html[data-layout='modrinth'] .mr-browse-bar .pill.active {
-  background: var(--mr-hl);
-  color: var(--mr-brand);
-}
 .mr-browse-bar .muted {
   color: var(--mr-secondary);
 }
@@ -2741,306 +2717,217 @@ html[data-layout='modrinth'] .mr-browse-bar .pill.active {
 .mr-filter-switch {
   border-bottom-color: var(--mr-brand-gradient-border);
 }
-/* Toggle.vue, small: 40 × 20 */
-.mr-toggle-sm .toggle {
-  width: 2.5rem;
-  height: 1.25rem;
+/* ------------------------------------------------------------ the formula's kit (docs/formula-modrinth.md, section 9) */
+/* a page header (base/page-header): leading picture, title, metadata, actions, a line under it */
+.mr-page-head {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--mr-divider);
 }
-.mr-toggle-sm .toggle-knob {
-  width: 0.75rem;
-  height: 0.75rem;
+.mr-page-head-art {
+  flex: none;
+  width: 4rem;
+  height: 4rem;
+  border-radius: calc(4rem * 16 / 96);
+  overflow: hidden;
+  background: var(--mr-button-bg);
+  outline: 1px solid rgb(255 255 255 / 15%);
+  outline-offset: -1px;
+  box-shadow: var(--mr-shadow-card);
 }
-html[data-layout='modrinth'] .mr-toggle-sm .toggle.on .toggle-knob {
-  transform: translate(1.25rem, -50%);
-}
-
-/* popovers opened from this layout (buttons/button-menu) */
-html[data-layout='modrinth'] .popover {
-  border-radius: var(--mr-r-14);
-  border: 0;
-  background: var(--mr-surface-3);
-  box-shadow: 0 0 0 1px var(--mr-surface-5), 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1), 0 20px 40px rgba(0, 0, 0, 0.3);
-  font-size: 1rem;
-  animation: mr-pop 0.125s var(--mr-ease-out-expo);
-}
-@keyframes mr-pop {
-  from {
-    opacity: 0;
-    scale: 0.9 0.3;
-  }
-}
-html[data-layout='modrinth'] .menu {
-  padding: 0.5rem;
-  min-width: 12rem;
-}
-html[data-layout='modrinth'] .menu .menu-item {
+.mr-page-head-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   gap: 0.5rem;
-  min-height: 2.5rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--mr-r-10);
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.25rem;
-  color: var(--mr-contrast);
-  white-space: nowrap;
+  align-self: center;
 }
-html[data-layout='modrinth'] .menu .menu-item:not(:disabled):hover {
-  background: var(--mr-surface-4);
-  color: var(--mr-contrast);
-}
-html[data-layout='modrinth'] .menu .menu-item.danger,
-html[data-layout='modrinth'] .menu .menu-item.danger .menu-icon {
-  color: var(--danger);
-}
-html[data-layout='modrinth'] .menu .menu-icon {
-  width: 1.25rem;
-  color: var(--mr-primary);
-}
-html[data-layout='modrinth'] .menu .menu-icon .icon,
-html[data-layout='modrinth'] .menu .menu-ext {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-html[data-layout='modrinth'] .menu .menu-check {
-  width: 1.25rem;
-  height: 1.25rem;
-  color: var(--mr-brand);
-}
-html[data-layout='modrinth'] .menu .menu-label small {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--mr-secondary);
-}
-html[data-layout='modrinth'] .menu .menu-sep {
-  margin: 0.25rem 0;
-  background: var(--mr-surface-5);
-}
-html[data-layout='modrinth'] .menu .menu-header {
-  padding: 0.5rem 0.75rem 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.025em;
-  text-transform: uppercase;
-  color: var(--mr-secondary);
-}
-html[data-layout='modrinth'] .menu .menu-pad {
-  padding: 0.25rem 0;
-}
-/* the dropdown of a Combobox: surface-4 with a border */
-html[data-layout='modrinth'] .popover.mr-combo-pop {
-  background: var(--mr-surface-4);
-  box-shadow: 0 0 0 1px var(--mr-surface-5), 0 25px 50px -12px rgb(0 0 0 / 0.25);
-}
-html[data-layout='modrinth'] .popover.mr-combo-pop .menu-item:not(:disabled):hover {
-  background: var(--mr-surface-5);
-}
-
-/* ------------------------------------------------------------ shared components, Modrinth style */
-html[data-layout='modrinth'] .btn {
-  border-radius: var(--mr-r-md);
-  font-weight: 600;
-}
-html[data-layout='modrinth'] .btn-md {
-  height: 2.25rem;
-  font-size: 1rem;
-  padding: 0 0.625rem;
-}
-html[data-layout='modrinth'] .btn-sm {
-  height: 2rem;
-  font-size: 0.875rem;
-  padding: 0 0.375rem;
-  border-radius: var(--mr-r-10);
-}
-html[data-layout='modrinth'] .btn-lg {
-  height: 2.5rem;
-  font-size: 1rem;
-  padding: 0 1rem;
-  border-radius: var(--mr-r-14);
-}
-html[data-layout='modrinth'] .btn-secondary,
-html[data-layout='modrinth'] .btn-outline {
-  background: var(--mr-surface-4);
-  border: 0;
-  box-shadow: inset 0 0 0 1px var(--mr-surface-5), 0 1px 1px rgba(0, 0, 0, 0.12);
-}
-html[data-layout='modrinth'] .btn-secondary:not(:disabled):hover,
-html[data-layout='modrinth'] .btn-outline:not(:disabled):hover {
-  background: var(--mr-surface-4);
-  filter: brightness(var(--mr-hover-brightness));
-}
-html[data-layout='modrinth'] .btn-primary {
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent), 0 2px 4px rgba(0, 0, 0, 0.04), 0 5px 8px rgba(0, 0, 0, 0.04);
-}
-html[data-layout='modrinth'] .btn:not(:disabled):active {
-  transform: scale(0.97);
-}
-html[data-layout='modrinth'] .input,
-html[data-layout='modrinth'] .textarea,
-html[data-layout='modrinth'] .select {
-  border-radius: var(--mr-r-md);
-}
-/* Checkbox.vue: 20 px, 6 px corners, a border */
-html[data-layout='modrinth'] .checkbox {
-  gap: 0.75rem;
-}
-html[data-layout='modrinth'] .checkbox-box {
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 0.375rem;
-  border: 1px solid var(--mr-surface-5);
-  background: var(--mr-surface-2);
-  color: var(--mr-primary);
-}
-html[data-layout='modrinth'] .checkbox-box .icon {
-  width: 1rem;
-  height: 1rem;
-}
-html[data-layout='modrinth'] .checkbox-box.checked,
-html[data-layout='modrinth'] .checkbox-box.indeterminate {
-  background: var(--mr-brand);
-  border-color: var(--mr-button-border);
-  color: var(--mr-on-brand);
-}
-html[data-layout='modrinth'] .checkbox:hover .checkbox-box:not(.checked) {
-  background: var(--mr-surface-2);
-  filter: brightness(var(--mr-hover-brightness));
-}
-html[data-layout='modrinth'] .checkbox:active .checkbox-box {
-  transform: scale(0.95);
-}
-/* Toggle.vue: 48 × 24, a border, the knob black when on */
-html[data-layout='modrinth'] .toggle {
-  width: 3rem;
-  height: 1.5rem;
-  border-radius: 999px;
-  border: 1px solid var(--mr-surface-5);
-  background: var(--mr-surface-4);
-  transition: background-color 0.2s, border-color 0.2s, opacity 0.2s;
-}
-html[data-layout='modrinth'] .toggle-knob {
-  top: 50%;
-  left: 0.25rem;
-  width: 1rem;
-  height: 1rem;
-  background: var(--mr-gray);
-  transform: translateY(-50%);
-  transition: transform 0.2s, background-color 0.2s, width 0.2s, height 0.2s;
-}
-html[data-layout='modrinth'] .toggle.on {
-  background: var(--mr-brand);
-}
-html[data-layout='modrinth'] .toggle.on .toggle-knob {
-  background: rgb(0 0 0 / 0.9);
-  transform: translate(1.5rem, -50%);
-}
-html[data-layout='modrinth'] .toggle:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-/* the tooltip (classes.scss: .v-popper--theme-tooltip) */
-html[data-layout='modrinth'] .tip {
-  padding: 0.625rem 0.75rem;
-  border-radius: var(--mr-r-sm);
-  border: 1px solid var(--mr-surface-5);
-  background: var(--mr-surface-3);
-  color: var(--mr-contrast);
-  font-size: 0.9rem;
-  font-weight: 500;
-  line-height: 1;
-  box-shadow: none;
-  filter: drop-shadow(0 2px 0.4rem rgba(0, 0, 0, 0.5));
-}
-html[data-layout='modrinth'] .tip-top::after {
-  border-top-color: var(--mr-surface-3);
-}
-html[data-layout='modrinth'] .tip-bottom::after {
-  border-bottom-color: var(--mr-surface-3);
-}
-html[data-layout='modrinth'] .tip-right::after {
-  border-right-color: var(--mr-surface-3);
-}
-html[data-layout='modrinth'] .tip-left::after {
-  border-left-color: var(--mr-surface-3);
-}
-/* modals (modal/NewModal.vue) */
-html[data-layout='modrinth'] .modal-backdrop {
-  background: var(--mr-overlay);
-  backdrop-filter: blur(5px);
-  animation: fade 0.2s ease-out;
-}
-html[data-layout='modrinth'] .modal {
-  border-radius: var(--mr-r-lg);
-  border: 1px solid var(--mr-surface-5);
-  background: var(--mr-surface-3);
-  box-shadow: none;
-  animation: mr-modal-in 0.2s ease-in-out;
-}
-html[data-layout='modrinth'] .modal-head {
-  gap: 0.75rem;
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--mr-surface-5);
-}
-html[data-layout='modrinth'] .modal-head h2 {
+.mr-page-head-text h1 {
+  margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
+  line-height: 1;
   color: var(--mr-contrast);
 }
-html[data-layout='modrinth'] .modal-close {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 50%;
-  background: var(--mr-surface-4);
-  color: var(--mr-contrast);
-  box-shadow: inset 0 0 0 1px var(--mr-surface-5), 0 1px 1px rgba(0, 0, 0, 0.12);
+.mr-page-head-text p {
+  margin: 0;
+  max-width: 44rem;
+  color: var(--mr-primary);
 }
-html[data-layout='modrinth'] .modal-close:hover {
-  filter: brightness(var(--mr-hover-brightness));
-}
-html[data-layout='modrinth'] .modal-body {
-  padding: 1.5rem;
-}
-html[data-layout='modrinth'] .modal-foot {
+/* Admonition.vue: info · warning · critical · success · neutral */
+.mr-admonition {
+  --mr-adm: var(--info);
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  column-gap: 0.5rem;
+  align-items: start;
   padding: 1rem;
-  border-top: 0;
-}
-html[data-layout='modrinth'] .toast {
   border-radius: var(--mr-r-lg);
-  border: 1px solid var(--mr-surface-5);
+  border: 1px solid var(--mr-adm);
+  background: color-mix(in srgb, var(--mr-adm) 20%, transparent);
+  color: var(--mr-contrast);
+}
+:root[data-light='1'] .mr-admonition {
+  background: color-mix(in srgb, var(--mr-adm) 10%, transparent);
+}
+.mr-admonition.warning {
+  --mr-adm: var(--warning);
+}
+.mr-admonition.critical {
+  --mr-adm: var(--danger);
+}
+.mr-admonition.success {
+  --mr-adm: var(--success);
+}
+.mr-admonition.neutral {
+  border-color: var(--mr-surface-4);
   background: var(--mr-surface-3);
 }
-html[data-layout='modrinth'] .pills {
-  border-radius: var(--mr-r-md);
+.mr-admonition > .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--mr-adm);
 }
-html[data-layout='modrinth'] .pill {
-  border-radius: var(--mr-r-sm);
+.mr-admonition.neutral > .icon {
+  color: var(--mr-secondary);
+}
+.mr-admonition-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.mr-admonition-body strong {
+  font-size: 1.125rem;
   font-weight: 600;
+  line-height: 1.5rem;
 }
-html[data-layout='modrinth'] .page h1 {
-  font-weight: 600;
+.mr-admonition-body p {
+  margin: 0;
+  color: color-mix(in srgb, var(--mr-contrast) 85%, transparent);
+  line-height: 1.25;
 }
-/* switch version / update projects in this layout */
-html[data-layout='modrinth'] .sv-list {
+.mr-admonition-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: center;
+}
+/* SettingsOptionCard.vue */
+.mr-option-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  border-radius: var(--mr-r-lg);
+  border: 1px solid var(--mr-surface-4);
   background: var(--mr-surface-3);
 }
-html[data-layout='modrinth'] .sv-search {
+.mr-option-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.25rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--mr-contrast);
+}
+.mr-option-card h3 > .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--mr-primary);
+}
+.mr-option-card p {
+  margin: 0;
+  color: var(--mr-secondary);
+  line-height: 1.5;
+}
+/* SettingsLabel.vue and SettingsFormGroup.vue */
+.mr-settings-label {
+  margin-bottom: 0.5rem;
+}
+.mr-settings-label h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--mr-contrast);
+}
+.mr-settings-label p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--mr-secondary);
+}
+.mr-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+.mr-form-group > label,
+.mr-label {
+  font-weight: 600;
+  color: var(--mr-contrast);
+}
+.mr-form-group > small,
+.mr-desc {
+  color: var(--mr-secondary);
+}
+/* a list inside a modal: a sunk zone with its own scroll */
+.mr-modal-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--mr-divider);
+  background: var(--mr-surface-2);
+  overflow-y: auto;
+}
+/* RadioButtons.vue: rows; LargeRadioButton.vue: cards */
+.mr-radio-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  padding: 0.5rem;
   border-radius: var(--mr-r-md);
+  font-weight: 500;
+  color: var(--mr-primary);
+  transition: background-color 0.15s, transform 0.05s;
 }
-html[data-layout='modrinth'] .sv-item {
-  border-radius: var(--mr-r-md);
+.mr-radio-row:hover {
+  background: var(--mr-button-bg);
 }
-html[data-layout='modrinth'] .sv-item.on {
-  background: var(--mr-hl);
-  box-shadow: none;
+.mr-radio-row:active {
+  transform: scale(0.95);
 }
-html[data-layout='modrinth'] .sv-item.on .sv-item-name {
+.mr-radio-row > .icon,
+.mr-radio-card > .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.mr-radio-row.on > .icon,
+.mr-radio-card.on > .icon {
   color: var(--mr-brand);
 }
-html[data-layout='modrinth'] .vbadge {
-  border-radius: 999px;
+.mr-radio-card {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--mr-r-md);
+  border: 2px solid var(--mr-button-bg);
+  font-weight: 500;
+  text-align: left;
+  color: var(--mr-primary);
+  transition: all 0.15s;
 }
-html[data-layout='modrinth'] .switch-version .sv-grid,
-html[data-layout='modrinth'] .up-table {
-  border-color: var(--mr-surface-4);
+.mr-radio-card.on {
+  border-color: var(--mr-brand);
+  color: var(--mr-contrast);
 }
 
 /* season decorations placed by this layout */
@@ -3383,131 +3270,6 @@ html[data-layout='modrinth'] .season-preview-bar {
   .lp-choice {
     transition: none;
   }
-}
-
-/* shared tabs (project page, servers, gallery) as Modrinth's NavTabs */
-html[data-layout='modrinth'] .tabs {
-  display: inline-flex;
-  gap: 0;
-  padding: 0.25rem;
-  border: 1px solid var(--mr-surface-4);
-  border-radius: 999px;
-  background: var(--mr-surface-3);
-  box-shadow: var(--mr-shadow-card);
-  width: auto;
-  align-self: flex-start;
-}
-html[data-layout='modrinth'] .tabs .tab {
-  height: auto;
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  font-size: 0.875rem;
-  font-weight: 700;
-  line-height: 1.25rem;
-  color: var(--mr-secondary);
-  border: 0;
-  box-shadow: none;
-}
-html[data-layout='modrinth'] .tabs .tab::after {
-  display: none;
-}
-html[data-layout='modrinth'] .tabs .tab:hover {
-  background: transparent;
-  color: var(--mr-secondary);
-}
-html[data-layout='modrinth'] .tabs .tab:active {
-  transform: scale(0.95);
-}
-html[data-layout='modrinth'] .tabs .tab.active {
-  background: var(--mr-hl);
-  color: var(--mr-brand);
-}
-/* project page (ProjectPageHeader.vue → PageHeader) */
-html[data-layout='modrinth'] .project-head {
-  background: transparent;
-  padding: 0 0 1rem;
-  border-bottom: 1px solid var(--mr-divider);
-  border-radius: 0;
-}
-html[data-layout='modrinth'] .project-icon {
-  width: 6rem;
-  height: 6rem;
-  border-radius: calc(6rem * 16 / 96);
-  outline: 1px solid rgb(255 255 255 / 15%);
-  outline-offset: -1px;
-  box-shadow: var(--mr-shadow-card);
-}
-html[data-layout='modrinth'] .project-titles h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--mr-contrast);
-}
-html[data-layout='modrinth'] .project-page .btn-lg {
-  height: 3rem;
-  border-radius: var(--mr-r-lg);
-  font-weight: 800;
-}
-html[data-layout='modrinth'] .version-item,
-html[data-layout='modrinth'] .gallery-item {
-  border-radius: var(--mr-r-lg);
-}
-html[data-layout='modrinth'] .back-link {
-  border-radius: var(--mr-r-md);
-}
-/* server list rows and other cards of the shared pages: Modrinth's cards */
-html[data-layout='modrinth'] .proj-row,
-html[data-layout='modrinth'] .srv-row {
-  border-radius: var(--mr-r-lg);
-  border: 1px solid var(--mr-surface-4);
-  background: var(--mr-surface-3);
-}
-html[data-layout='modrinth'] .proj-row .proj-icon {
-  border-radius: calc(4rem * 16 / 96);
-}
-html[data-layout='modrinth'] .ping-chip,
-html[data-layout='modrinth'] .proj-meta > span {
-  border-radius: 999px;
-}
-html[data-layout='modrinth'] .skin-card,
-html[data-layout='modrinth'] .shot,
-html[data-layout='modrinth'] .world-row,
-html[data-layout='modrinth'] .server-row {
-  border-radius: var(--mr-r-xl);
-}
-
-/* the bar of places to drop a dragged profile (FloatingActionBar.vue) */
-html[data-layout='modrinth'] .dropbar {
-  bottom: 1rem;
-  gap: 0.375rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: var(--mr-r-xl);
-  background: var(--mr-surface-3);
-  border: 1px solid var(--mr-surface-5);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 6px 10px 0 rgba(0, 0, 0, 0.15);
-  filter: drop-shadow(0 25px 25px rgb(0 0 0 / 0.15));
-}
-html[data-layout='modrinth'] .dropbar-label {
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0 0.75rem;
-  color: var(--mr-contrast);
-}
-html[data-layout='modrinth'] .dropbar-target {
-  height: 2.25rem;
-  padding: 0 0.625rem;
-  border-radius: var(--mr-r-md);
-  background: var(--mr-surface-4);
-  border: 2px dashed transparent;
-  box-shadow: inset 0 0 0 1px var(--mr-surface-5);
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--mr-contrast);
-}
-html[data-layout='modrinth'] .dropbar-target.over {
-  border-color: var(--mr-brand);
-  color: var(--mr-brand);
-  background: var(--mr-hl);
 }
 
 /* instance artwork: the picture always fills its box (photos are cropped to

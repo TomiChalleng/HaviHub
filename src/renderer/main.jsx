@@ -15,6 +15,7 @@ import '@fontsource/inter/600.css';
 import '@fontsource/inter/700.css';
 import '@fontsource/inter/800.css';
 import './modrinth/mr.css';
+import './modrinth/mr-shared.css';
 import App from './App.jsx';
 import { installInputGuard } from './lib/inputGuard.js';
 
