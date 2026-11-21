@@ -8,6 +8,9 @@ y los estilos compartidos que hereda) y el **Modrinth App** oficial.
   - Sistema de diseño: `packages/assets/styles/{variables,defaults,classes}.scss`, `packages/tooling-config/tailwind/tailwind-preset.ts`, `packages/ui/src/components/**`
 - Fuente de Havi Hub: rama actual, `f9aad59`.
 
+Las reglas generales que salen de esta comparación, para dibujar cualquier pantalla al estilo
+Modrinth, están en [`formula-modrinth.md`](./formula-modrinth.md).
+
 Solo se comparan interfaces que existen en ambos launchers. Lo que es propio de Havi Hub está en la
 [sección 12](#12-interfaces-exclusivas-de-havi-hub-fuera-de-esta-comparación).
 
