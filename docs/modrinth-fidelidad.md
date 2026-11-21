@@ -556,5 +556,5 @@ anota el componente de Modrinth más parecido, que servirá de plantilla:
 - Descubrir mantiene el scroll infinito y el selector de fuente propios; Modrinth pagina y tiene "View:" y modos de vista.
 - Los menús emergentes no tienen la flecha de 10 px de Modrinth.
 - El divisor de instancias recientes no se arrastra (la cantidad es automática).
-- La página de proyecto, Skins, Capturas, Servidores, Ayuda y el contenido de los diálogos siguen siendo las vistas compartidas con retoques; en Modrinth el proyecto lleva su información en la barra derecha.
+- Las páginas compartidas (Servidores, Skins, Capturas, Mundos, Registros, Proyecto, Ajustes, diálogos) ya siguen la fórmula (`mr-shared.css`, `mr-pages.css`); Servidores tiene los filtros en la barra derecha. Falta que la página de proyecto lleve su información (compatibilidad, enlaces, creadores, detalles) en la barra derecha, como Modrinth, y rediseñar la bienvenida.
 - No hay barra de carga bajo la barra de título ni botón para ocultar la barra derecha.

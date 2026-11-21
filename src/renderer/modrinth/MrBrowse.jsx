@@ -19,6 +19,7 @@ import { SidebarPortal } from './MrShell.jsx';
 import { MrTabs } from './MrInstance.jsx';
 import { loaderText } from './MrHome.jsx';
 import { IC } from './mrsize.js';
+import { FilterSection, FilterOption } from './MrFilters.jsx';
 
 const SORTS = () => [
   { value: 'relevance', label: t('Relevancia') },
@@ -31,45 +32,6 @@ const LOADERS = ['fabric', 'forge', 'neoforge', 'quilt'];
 const LOADER_NAME = { fabric: 'Fabric', forge: 'Forge', neoforge: 'NeoForge', quilt: 'Quilt' };
 // Modrinth's project type icons
 const TYPE_ICON = { modpack: 'packageOpen', mod: 'box', resourcepack: 'paintbrush', shader: 'glasses', datapack: 'braces', world: 'map' };
-
-// a filter group in the sidebar (search/SearchSidebarFilter.vue): a header
-// that folds it, showing what is chosen while folded
-function FilterSection({ title, children, summary = [], open: initial = true }) {
-  const [open, setOpen] = useState(initial);
-  return (
-    <section className={`mr-filter ${open ? 'open' : ''}`}>
-      <button className="mr-filter-head" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        <span className="mr-filter-title">
-          <h3>{title}</h3>
-          <Icon name="dropdown" size={IC.s5} className="mr-chevron" />
-        </span>
-        {!open && summary.length ? (
-          <span className="mr-filter-summary">
-            {summary.map((x) => (
-              <span key={x}>{x}</span>
-            ))}
-          </span>
-        ) : null}
-      </button>
-      <div className="mr-collapse" inert={open ? undefined : ''}>
-        <div>
-          <div className="mr-filter-body">{children}</div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// one option (search/SearchFilterOption.vue): a row that lights up when
-// chosen, with a check showing on hover
-function FilterOption({ on, onClick, children }) {
-  return (
-    <button className={`mr-filter-opt ${on ? 'on' : ''}`} onClick={onClick} aria-pressed={on}>
-      <span className="mr-filter-opt-label">{children}</span>
-      <Icon name="check" size={IC.s4} className="mr-filter-opt-check" />
-    </button>
-  );
-}
 
 // a search result (project/card/ProjectCard.vue, list layout)
 function ResultCard({ p, instance, installed, busy, onInstall, onOpen, issue }) {

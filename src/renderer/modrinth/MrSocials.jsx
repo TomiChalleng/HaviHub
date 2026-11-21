@@ -323,8 +323,12 @@ function EmbedBody({ s }) {
         /* not attached yet */
       }
     };
+    const refits = [];
     const ready = async () => {
       fit();
+      // Chromium keeps zoom per site and the window's own zoom can reach the
+      // page after it loads: fit again once it has settled
+      for (const ms of [250, 1000, 2500]) refits.push(setTimeout(() => alive && fit(), ms));
       let text = "";
       try {
         text = await wv.executeJavaScript(
@@ -352,8 +356,18 @@ function EmbedBody({ s }) {
     };
     wv.addEventListener("dom-ready", ready);
     wv.addEventListener("did-fail-load", failed);
+    // the box can still change width after the page loads (the sidebar
+    // settling): the page keeps its ~340 px
+    const ro = new ResizeObserver(() => fit());
+    ro.observe(box.current);
+    // a new zoom of the window (main.js applies it after resizes) reaches the
+    // embedded page too and would undo the fit
+    window.addEventListener("resize", fit);
     return () => {
       alive = false;
+      ro.disconnect();
+      refits.forEach(clearTimeout);
+      window.removeEventListener("resize", fit);
       clearTimeout(timer);
       wv.removeEventListener("dom-ready", ready);
       wv.removeEventListener("did-fail-load", failed);

@@ -239,8 +239,10 @@ contenido es una entidad (una instancia, un proyecto, una cuenta, una opción).
 | `Admonition` | `.mr-notice` (`.warn`, `.err`) | falta `info`, `success` y la cabecera de 18 px (ver abajo) |
 | `EmptyState` | `.mr-empty` | Modrinth: ilustración ≤200 px, título 24/600 contrast, texto secondary, acciones a 2rem |
 
-Componentes de Modrinth que **todavía no tienen clase** y harán falta para las pantallas
-exclusivas (se crean al aplicar la fórmula, con estos valores):
+Componentes que faltaban y ya están en el kit de `mr.css` (sección "the formula's kit"):
+`.mr-page-head`, `.mr-admonition` (`.warning .critical .success .neutral`), `.mr-option-card`,
+`.mr-settings-label`, `.mr-form-group`, `.mr-label`, `.mr-desc`, `.mr-modal-zone`, `.mr-radio-row`,
+`.mr-radio-card`. Sus valores:
 
 | Componente | Valores |
 |---|---|
@@ -333,7 +335,21 @@ Antes de dar por buena una pantalla:
 
 ---
 
-## 12. Dónde se aplica a continuación
+## 12. Dónde está aplicada
+
+Tres hojas, en este orden (`src/renderer/main.jsx`):
+
+| Archivo | Qué contiene |
+|---|---|
+| `modrinth/mr.css` | el marco del layout, sus pantallas propias (Inicio, Instancia, Contenido, Descubrir) y el kit |
+| `modrinth/mr-shared.css` | los componentes compartidos (`.btn`, `.input`, `.select`, `.tabs`, `.pills`, menús, modales, toasts, descargas, campos de ajustes…) con estilo Modrinth |
+| `modrinth/mr-pages.css` | las páginas compartidas, cada una con su receta: listas, filas, registros, capturas, skins, proyecto, ajustes, diálogos |
+
+Los filtros de la barra derecha están en `modrinth/MrFilters.jsx` (los usan Descubrir y
+Servidores). Servidores tiene una variante Modrinth (`MrServerBrowse` en `pages/Servers.jsx`) con
+la búsqueda y el orden arriba y los filtros en la barra derecha.
+
+Recetas por pantalla:
 
 | Interfaz de Havi Hub | Receta | Componente base |
 |---|---|---|

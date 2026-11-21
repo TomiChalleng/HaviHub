@@ -1,0 +1,803 @@
+/* The shared pages (styles/pages.css) inside the Modrinth layout, each drawn
+   with a recipe of docs/formula-modrinth.md (section 10). Only the look
+   changes; the markup is the one both layouts share. */
+
+/* ------------------------------------------------------------ page chrome */
+html[data-layout='modrinth'] .browse-top,
+html[data-layout='modrinth'] .discover-top {
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 0;
+}
+html[data-layout='modrinth'] .browse-top .pills,
+html[data-layout='modrinth'] .discover-top .pills {
+  margin-bottom: 0;
+}
+html[data-layout='modrinth'] .toolbar,
+html[data-layout='modrinth'] .content-toolbar {
+  gap: 0.5rem;
+  min-height: 0;
+  margin-bottom: 0.75rem;
+}
+html[data-layout='modrinth'] .toolbar .icon-btn,
+html[data-layout='modrinth'] .content-toolbar .icon-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+/* an Admonition (Admonition.vue) */
+html[data-layout='modrinth'] .banner {
+  --mr-adm: var(--info);
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 1rem;
+  border-radius: var(--mr-r-lg);
+  border: 1px solid var(--mr-adm);
+  background: color-mix(in srgb, var(--mr-adm) 20%, transparent);
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .banner.warn {
+  --mr-adm: var(--warning);
+}
+html[data-layout='modrinth'] .banner.err {
+  --mr-adm: var(--danger);
+}
+html[data-layout='modrinth'] .banner > .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--mr-adm);
+}
+html[data-layout='modrinth'] .load-more {
+  padding: 1rem;
+}
+html[data-layout='modrinth'] .link-btn {
+  color: var(--mr-brand);
+  font-weight: 600;
+}
+html[data-layout='modrinth'] .link-btn:hover {
+  text-decoration: underline;
+}
+
+/* ------------------------------------------------------------ detailed lists (ProjectCard.vue, list) */
+html[data-layout='modrinth'] .proj-list {
+  gap: 0.75rem;
+}
+html[data-layout='modrinth'] .proj-row {
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: var(--mr-r-lg);
+  border: 1px solid var(--mr-surface-4);
+  background: var(--mr-surface-3);
+  transition: filter 0.125s ease-out, scale 0.125s ease-out;
+}
+html[data-layout='modrinth'] .proj-row:not(.srv-row):hover {
+  background: var(--mr-surface-3);
+  filter: brightness(var(--mr-hover-brightness));
+}
+html[data-layout='modrinth'] .proj-row:not(.srv-row):active {
+  scale: 0.98;
+}
+html[data-layout='modrinth'] .srv-row:hover {
+  background: var(--mr-surface-3);
+}
+html[data-layout='modrinth'] .proj-icon {
+  width: 6.25rem;
+  height: 6.25rem;
+  border-radius: calc(6.25rem * 16 / 96);
+  object-fit: contain;
+  background: var(--mr-button-bg);
+  outline: 1px solid rgb(255 255 255 / 15%);
+  outline-offset: -1px;
+}
+html[data-layout='modrinth'] .proj-icon.placeholder {
+  color: var(--mr-secondary);
+}
+html[data-layout='modrinth'] .proj-icon.placeholder .icon {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+html[data-layout='modrinth'] .proj-main {
+  gap: 0.5rem;
+}
+html[data-layout='modrinth'] .proj-title-row {
+  align-items: center;
+  gap: 0.5rem;
+}
+html[data-layout='modrinth'] .proj-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .srv-title:hover {
+  color: var(--mr-contrast);
+  text-decoration: underline;
+}
+html[data-layout='modrinth'] .proj-desc {
+  color: var(--mr-primary);
+  font-weight: 400;
+}
+html[data-layout='modrinth'] .proj-meta {
+  gap: 0.5rem 0.75rem;
+  margin-top: auto;
+  font-size: 0.875rem;
+  color: var(--mr-secondary);
+}
+html[data-layout='modrinth'] .proj-meta span {
+  gap: 0.375rem;
+}
+html[data-layout='modrinth'] .proj-meta .icon {
+  width: 1rem;
+  height: 1rem;
+}
+html[data-layout='modrinth'] .proj-side {
+  gap: 0.75rem;
+}
+/* a server's own bits */
+html[data-layout='modrinth'] .srv-players {
+  color: var(--mr-contrast);
+  font-weight: 500;
+}
+html[data-layout='modrinth'] .srv-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  box-shadow: 0 0 0 0.1875rem var(--mr-tint);
+}
+html[data-layout='modrinth'] .ping-chip {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+}
+html[data-layout='modrinth'] .srv-pack {
+  color: var(--mr-primary);
+  font-weight: 500;
+}
+html[data-layout='modrinth'] .srv-pack img {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.375rem;
+}
+html[data-layout='modrinth'] .srv-actions {
+  gap: 0.5rem;
+}
+html[data-layout='modrinth'] .srv-actions .icon-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--mr-surface-4);
+  color: var(--mr-contrast);
+  box-shadow: inset 0 0 0 1px var(--mr-surface-5), 0 1px 1px rgba(0, 0, 0, 0.12);
+}
+html[data-layout='modrinth'] .srv-actions .icon-btn:hover {
+  background: var(--mr-surface-4);
+  filter: brightness(var(--mr-hover-brightness));
+}
+html[data-layout='modrinth'] .srv-version {
+  font-size: 0.875rem;
+  color: var(--mr-secondary);
+}
+html[data-layout='modrinth'] .srv-row .known-tag {
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--success);
+  background: var(--mr-tint);
+  color: var(--success);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+}
+html[data-layout='modrinth'] .srv-row .known-ip {
+  font-size: 0.875rem;
+}
+/* Discover servers, Modrinth's way (Servers.jsx, MrServerBrowse) */
+.mr-srv {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.mr-srv .proj-list {
+  margin-top: 0.25rem;
+}
+.mr-srv-source {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+/* ------------------------------------------------------------ compact lists (world/WorldItem.vue, InstanceItem.vue) */
+html[data-layout='modrinth'] .world-list,
+html[data-layout='modrinth'] .server-list {
+  gap: 0.75rem;
+}
+html[data-layout='modrinth'] .world-row,
+html[data-layout='modrinth'] .server-row {
+  gap: 0.75rem;
+  min-height: 5rem;
+  padding: 0.75rem;
+  border-radius: var(--mr-r-xl);
+  border: 1px solid var(--mr-surface-4);
+  background: var(--mr-surface-3);
+  transition: filter 0.125s ease-out;
+}
+html[data-layout='modrinth'] .world-row:hover,
+html[data-layout='modrinth'] .server-row:hover {
+  background: var(--mr-surface-3);
+  filter: brightness(1.1);
+}
+html[data-layout='modrinth'] .world-row:has(.btn:hover, .icon-btn:hover),
+html[data-layout='modrinth'] .server-row:has(.btn:hover, .icon-btn:hover) {
+  filter: none;
+}
+html[data-layout='modrinth'] .world-icon,
+html[data-layout='modrinth'] .server-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--mr-r-14);
+  background: var(--mr-button-bg);
+  outline: 1px solid rgb(255 255 255 / 15%);
+  outline-offset: -1px;
+}
+html[data-layout='modrinth'] .world-icon.placeholder,
+html[data-layout='modrinth'] .server-icon.placeholder {
+  background: var(--mr-button-bg);
+  color: var(--mr-secondary);
+}
+html[data-layout='modrinth'] .world-icon.placeholder .icon,
+html[data-layout='modrinth'] .server-icon.placeholder .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+html[data-layout='modrinth'] .world-main,
+html[data-layout='modrinth'] .server-main {
+  gap: 0.25rem;
+}
+html[data-layout='modrinth'] .world-main strong,
+html[data-layout='modrinth'] .server-main strong {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .world-main .muted,
+html[data-layout='modrinth'] .server-main .muted,
+html[data-layout='modrinth'] .world-folder,
+html[data-layout='modrinth'] .world-date {
+  font-size: 0.875rem;
+  color: var(--mr-secondary);
+}
+html[data-layout='modrinth'] .world-date {
+  width: 7rem;
+}
+html[data-layout='modrinth'] .world-folder {
+  max-width: 12rem;
+}
+html[data-layout='modrinth'] .world-row .btn-sm,
+html[data-layout='modrinth'] .server-row .btn-sm {
+  height: 2.25rem;
+  gap: 0.375rem;
+  padding: 0 0.625rem;
+  border-radius: var(--mr-r-md);
+  font-size: 1rem;
+}
+html[data-layout='modrinth'] .world-row .btn-sm > .icon,
+html[data-layout='modrinth'] .server-row .btn-sm > .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+html[data-layout='modrinth'] .server-ip {
+  font-size: 0.875rem;
+  color: var(--mr-secondary);
+}
+html[data-layout='modrinth'] .server-inst {
+  gap: 0.5rem;
+  width: 14rem;
+  color: var(--mr-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+html[data-layout='modrinth'] .server-inst .inst-image {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.25rem;
+}
+
+/* ------------------------------------------------------------ logs (pages/instance/logs) */
+html[data-layout='modrinth'] .logs-tab {
+  margin-top: 0;
+  gap: 0.75rem;
+}
+html[data-layout='modrinth'] .logs-toolbar {
+  gap: 0.5rem;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+}
+html[data-layout='modrinth'] .logs-toolbar .icon-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+html[data-layout='modrinth'] .log-search {
+  height: 2.25rem;
+  width: 20rem;
+  gap: 0.5rem;
+  margin-right: 0.25rem;
+  padding: 0 0.75rem;
+  border-radius: var(--mr-r-md);
+  border: 1px solid var(--mr-surface-5);
+  background: var(--mr-surface-4);
+  color: var(--mr-secondary);
+}
+html[data-layout='modrinth'] .log-search:focus-within {
+  box-shadow: 0 0 0 0.25rem var(--mr-brand-shadow);
+}
+html[data-layout='modrinth'] .log-search input {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--mr-primary);
+}
+html[data-layout='modrinth'] .log-area {
+  border-radius: var(--mr-r-xl);
+  border: 1px solid var(--mr-surface-4);
+  background: var(--mr-surface-2);
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  padding: 0.75rem 0 2.5rem;
+}
+
+/* ------------------------------------------------------------ screenshots (components/ui/screenshots-page) */
+html[data-layout='modrinth'] .gallery-filters {
+  gap: 0.5rem;
+}
+html[data-layout='modrinth'] .gf-inst,
+html[data-layout='modrinth'] .gf-group,
+html[data-layout='modrinth'] .gf-version,
+html[data-layout='modrinth'] .gf-date,
+html[data-layout='modrinth'] .gf-order {
+  width: auto;
+  min-width: 11rem;
+  max-width: 16rem;
+}
+html[data-layout='modrinth'] .gallery-count {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--mr-contrast);
+  font-variant-numeric: tabular-nums;
+}
+html[data-layout='modrinth'] .gallery-days {
+  gap: 1.5rem;
+}
+html[data-layout='modrinth'] .gallery-day-head {
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  font-family: var(--font);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .gallery-day-count {
+  font-size: 0.875rem;
+  color: var(--mr-secondary);
+}
+html[data-layout='modrinth'] .gallery-grid {
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.75rem;
+}
+html[data-layout='modrinth'] .gallery-shot {
+  border-radius: var(--mr-r-lg);
+  border: 1px solid var(--mr-surface-4);
+  background: var(--mr-surface-3);
+  transition: filter 0.125s ease-out, scale 0.125s ease-out;
+}
+html[data-layout='modrinth'] .gallery-shot:hover {
+  filter: brightness(1.1);
+}
+html[data-layout='modrinth'] .gallery-shot:active {
+  scale: 0.98;
+}
+
+/* ------------------------------------------------------------ skins (pages/Skins.vue) */
+html[data-layout='modrinth'] .skin-viewer-panel {
+  border-radius: var(--mr-r-xl);
+  border: 1px solid var(--mr-surface-4);
+  background: var(--mr-surface-3);
+  overflow: hidden;
+}
+html[data-layout='modrinth'] .skin-toolbar {
+  gap: 0.375rem;
+  margin: 0.75rem 0.75rem 0;
+  padding: 0;
+  background: transparent;
+}
+html[data-layout='modrinth'] .skin-tool {
+  height: 2.25rem;
+  min-width: 2.25rem;
+  gap: 0.375rem;
+  border-radius: 999px;
+  background: var(--mr-surface-4);
+  color: var(--mr-contrast);
+  box-shadow: inset 0 0 0 1px var(--mr-surface-5), 0 1px 1px rgba(0, 0, 0, 0.12);
+  transition: filter 0.15s, transform 0.15s;
+}
+html[data-layout='modrinth'] .skin-tool.wide {
+  padding: 0 0.75rem;
+  border-radius: var(--mr-r-md);
+  font-weight: 600;
+}
+html[data-layout='modrinth'] .skin-tool .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+html[data-layout='modrinth'] .skin-tool:hover:not(:disabled) {
+  filter: brightness(var(--mr-hover-brightness));
+}
+html[data-layout='modrinth'] .skin-tool:active:not(:disabled) {
+  transform: scale(0.97);
+}
+html[data-layout='modrinth'] .skin-tool.active {
+  background: var(--mr-hl);
+  color: var(--mr-brand);
+  box-shadow: inset 0 0 0 1px var(--mr-brand);
+}
+html[data-layout='modrinth'] .skin-model-label {
+  font-size: 0.875rem;
+  color: var(--mr-secondary);
+}
+html[data-layout='modrinth'] .skin-bottom {
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 1px solid var(--mr-surface-5);
+}
+html[data-layout='modrinth'] .skin-current-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .skin-lib-head h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .skin-grid {
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 10.75rem));
+  gap: 0.75rem;
+}
+html[data-layout='modrinth'] .skin-grid-head {
+  margin: 0.75rem 0 -0.25rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .skin-card {
+  border-radius: var(--mr-r-xl);
+  border: 1px solid var(--mr-surface-4);
+  background: var(--mr-surface-3);
+  transition: filter 0.15s, scale 0.15s, border-color 0.15s;
+}
+html[data-layout='modrinth'] .skin-card:hover {
+  border-color: var(--mr-surface-4);
+  filter: brightness(1.1);
+}
+html[data-layout='modrinth'] .skin-card:active {
+  scale: 0.97;
+}
+html[data-layout='modrinth'] .skin-card.selected {
+  border-color: var(--mr-brand);
+  box-shadow: 0 0 0 1px var(--mr-brand);
+}
+html[data-layout='modrinth'] .skin-card-img {
+  height: 10rem;
+  background: var(--mr-surface-2);
+}
+html[data-layout='modrinth'] .skin-card-img img {
+  height: 8rem;
+}
+html[data-layout='modrinth'] .skin-card-label {
+  gap: 0.375rem;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .skin-card-label .icon {
+  color: var(--mr-brand);
+}
+html[data-layout='modrinth'] .skin-card.upload {
+  gap: 0.75rem;
+  min-height: 13rem;
+  font-weight: 600;
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .upload-circle {
+  width: 3rem;
+  height: 3rem;
+  background: var(--mr-surface-4);
+  box-shadow: inset 0 0 0 1px var(--mr-surface-5);
+}
+html[data-layout='modrinth'] .upload-circle .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+html[data-layout='modrinth'] .skins-note,
+html[data-layout='modrinth'] .skin-hint {
+  font-size: 0.875rem;
+  color: var(--mr-secondary);
+}
+
+/* ------------------------------------------------------------ project (pages/project) */
+html[data-layout='modrinth'] .project-actions {
+  gap: 0.5rem;
+  min-width: 15rem;
+}
+html[data-layout='modrinth'] .project-body {
+  padding: 1rem 0;
+}
+html[data-layout='modrinth'] .project-summary {
+  color: var(--mr-primary);
+}
+html[data-layout='modrinth'] .markdown {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--mr-primary);
+}
+html[data-layout='modrinth'] .markdown h1,
+html[data-layout='modrinth'] .markdown h2,
+html[data-layout='modrinth'] .markdown h3 {
+  color: var(--mr-contrast);
+  font-weight: 600;
+}
+html[data-layout='modrinth'] .markdown code,
+html[data-layout='modrinth'] .markdown pre {
+  border-radius: var(--mr-r-sm);
+  background: var(--mr-surface-3);
+}
+html[data-layout='modrinth'] .markdown img {
+  border-radius: var(--mr-r-md);
+}
+html[data-layout='modrinth'] .versions {
+  gap: 0.75rem;
+}
+html[data-layout='modrinth'] .version-table {
+  gap: 0;
+  border-radius: var(--mr-r-xl);
+  border: 1px solid var(--mr-surface-4);
+  overflow: clip;
+}
+html[data-layout='modrinth'] .version-item {
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0;
+  border-top: 1px solid var(--mr-surface-4);
+  background: var(--mr-surface-2);
+}
+html[data-layout='modrinth'] .version-item:first-child {
+  border-top: 0;
+}
+html[data-layout='modrinth'] .version-item:nth-child(even) {
+  background: var(--mr-surface-1-5);
+}
+html[data-layout='modrinth'] .version-main strong {
+  font-weight: 600;
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .version-main small {
+  font-size: 0.875rem;
+  color: var(--mr-secondary);
+}
+html[data-layout='modrinth'] .gallery-item {
+  border-radius: var(--mr-r-lg);
+  border: 1px solid var(--mr-surface-4);
+  background: var(--mr-surface-3);
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------ settings (features/settings) */
+html[data-layout='modrinth'] .set-section {
+  gap: 0.75rem;
+  padding: 0 0 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--mr-surface-5);
+}
+html[data-layout='modrinth'] .set-section h3 {
+  margin-bottom: 0;
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .set-desc {
+  max-width: 44rem;
+  font-size: 0.875rem;
+  color: var(--mr-secondary);
+}
+html[data-layout='modrinth'] .set-sub {
+  margin: 0.75rem 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--mr-contrast);
+}
+/* RadioButtons.vue */
+html[data-layout='modrinth'] .radio-row,
+html[data-layout='modrinth'] .lang-item {
+  width: fit-content;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: var(--mr-r-md);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--mr-primary);
+  transition: background-color 0.15s, transform 0.05s;
+}
+html[data-layout='modrinth'] .lang-item {
+  width: 100%;
+}
+html[data-layout='modrinth'] .radio-row:hover,
+html[data-layout='modrinth'] .lang-item:hover {
+  background: var(--mr-surface-4);
+}
+html[data-layout='modrinth'] .radio-row:active,
+html[data-layout='modrinth'] .lang-item:active {
+  transform: scale(0.98);
+}
+html[data-layout='modrinth'] .radio {
+  width: 1.25rem;
+  height: 1.25rem;
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--mr-secondary);
+}
+html[data-layout='modrinth'] .radio-row.active .radio,
+html[data-layout='modrinth'] .lang-item.active .radio {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--mr-brand);
+}
+html[data-layout='modrinth'] .radio-row.active .radio::after,
+html[data-layout='modrinth'] .lang-item.active .radio::after {
+  width: 0.625rem;
+  height: 0.625rem;
+  background: var(--mr-brand);
+}
+html[data-layout='modrinth'] .radio-row.active,
+html[data-layout='modrinth'] .lang-item.active {
+  color: var(--mr-contrast);
+}
+/* lists of choices: Java installations, accounts (LargeRadioButton.vue) */
+html[data-layout='modrinth'] .java-item,
+html[data-layout='modrinth'] .account-item {
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--mr-r-md);
+  border: 2px solid var(--mr-surface-4);
+  background: transparent;
+  color: var(--mr-primary);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+html[data-layout='modrinth'] .java-item.active,
+html[data-layout='modrinth'] .account-item.active {
+  border-color: var(--mr-brand);
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .java-major {
+  font-weight: 800;
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .status-box {
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: var(--mr-r-lg);
+  border: 1px solid var(--mr-surface-4);
+  background: var(--mr-surface-2);
+}
+html[data-layout='modrinth'] .status-box .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+html[data-layout='modrinth'] .preset-grid {
+  gap: 0.75rem;
+}
+html[data-layout='modrinth'] .preset {
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: var(--mr-r-lg);
+  border: 2px solid var(--mr-surface-4);
+  background: var(--mr-surface-2);
+}
+html[data-layout='modrinth'] .preset.active {
+  border-color: var(--mr-brand);
+}
+html[data-layout='modrinth'] .preset-preview {
+  border-radius: var(--mr-r-sm);
+}
+html[data-layout='modrinth'] .preset-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--mr-contrast);
+}
+
+/* ------------------------------------------------------------ dialogs (recipe G) */
+/* "Cancel" and the like: outlined, as in Modrinth's modals */
+html[data-layout='modrinth'] .modal-foot .btn-ghost,
+html[data-layout='modrinth'] .modal-foot .btn-flat {
+  background: transparent;
+  color: var(--mr-contrast);
+  box-shadow: 0 0 0 1px var(--mr-surface-5);
+}
+html[data-layout='modrinth'] .modal-foot .btn-ghost:not(:disabled):hover,
+html[data-layout='modrinth'] .modal-foot .btn-flat:hover {
+  background: transparent;
+}
+/* pills inside a dialog stay on one line */
+html[data-layout='modrinth'] .modal .pills {
+  flex-wrap: nowrap;
+}
+/* create instance: the icon, the version list (a sunk zone), the loaders (LargeRadioButton) */
+html[data-layout='modrinth'] .create-icon-preview {
+  border-radius: calc(6.75rem * 16 / 96);
+  background: var(--mr-button-bg);
+  outline: 1px solid rgb(255 255 255 / 15%);
+  outline-offset: -1px;
+}
+html[data-layout='modrinth'] .create-icon-preview:hover,
+html[data-layout='modrinth'] .create-icon-preview:focus-visible {
+  box-shadow: 0 0 0 0.25rem var(--mr-brand-shadow);
+}
+html[data-layout='modrinth'] .version-list {
+  padding: 0.25rem;
+  border-radius: var(--mr-r-md);
+  border: 1px solid var(--mr-surface-4);
+  background: var(--mr-surface-2);
+}
+html[data-layout='modrinth'] .version-row {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--mr-r-10);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--mr-primary);
+}
+html[data-layout='modrinth'] .version-row:hover {
+  background: var(--mr-surface-4);
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .version-row.active {
+  background: var(--mr-hl);
+  color: var(--mr-brand);
+  font-weight: 600;
+}
+html[data-layout='modrinth'] .version-row.active .version-type,
+html[data-layout='modrinth'] .version-row.active .version-date {
+  color: var(--mr-brand);
+}
+html[data-layout='modrinth'] .version-type,
+html[data-layout='modrinth'] .version-date {
+  font-size: 0.875rem;
+  color: var(--mr-secondary);
+}
+html[data-layout='modrinth'] .loader-picker {
+  gap: 0.5rem;
+}
+html[data-layout='modrinth'] .loader-opt {
+  gap: 0.375rem;
+  padding: 0.75rem 0.5rem;
+  border-radius: var(--mr-r-md);
+  border: 2px solid var(--mr-surface-4);
+  background: transparent;
+  font-weight: 500;
+  color: var(--mr-primary);
+}
+html[data-layout='modrinth'] .loader-opt .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+html[data-layout='modrinth'] .loader-opt:not(:disabled):hover {
+  background: var(--mr-surface-4);
+}
+html[data-layout='modrinth'] .loader-opt.active {
+  border-color: var(--mr-brand);
+  background: transparent;
+  color: var(--mr-contrast);
+}
+html[data-layout='modrinth'] .loader-opt.active .icon {
+  color: var(--mr-brand);
+}
+html[data-layout='modrinth'] .field-row .field-control {
+  flex-basis: 24rem;
+}
+html[data-layout='modrinth'] .field-row .field-control .slider {
+  width: 24rem;
+}

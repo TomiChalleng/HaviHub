@@ -13,6 +13,9 @@ import { t } from '../lib/i18n.js';
 import { maskIp, formatCount } from '../lib/format.js';
 import { CATEGORY_GROUPS, categoriesOf, categoryLabel, REGION_IDS, regionLabel, LANGUAGES } from '../lib/server-tags.js';
 import { getLanguage } from '../lib/i18n.js';
+import { Popover, MenuItem, useMenu } from '../components/Menu.jsx';
+import { SidebarPortal } from '../modrinth/MrShell.jsx';
+import { FilterSection, FilterOption, FilterSwitch } from '../modrinth/MrFilters.jsx';
 import { LIMITS } from '../../shared/limits.js';
 
 function ServerDialog({ server, instances, onResolve }) {
@@ -419,6 +422,115 @@ function DiscoverServers() {
   const copy = (s) => call('app.copyText', s.address).then(() => app.toast(t('IP copiada: {ip}', { ip: s.address }), { type: 'success' }));
   const toggleCat = (id, on) => setCats((l) => (on ? [...l, id] : l.filter((x) => x !== id)));
   const filtersOn = kind || version || region || language || cats.length || !online;
+  const clearFilters = () => {
+    setKind('');
+    setVersion('');
+    setRegion('');
+    setLanguage('');
+    setCats([]);
+    setOnline(true);
+  };
+  const SORTS = [
+    { value: 'relevance', label: t('Relevancia') },
+    { value: 'plays', label: t('Más jugados') },
+    { value: 'online', label: t('Más jugadores ahora') },
+    { value: 'follows', label: t('Más seguidos') },
+    { value: 'newest', label: t('Más nuevos') },
+    { value: 'updated', label: t('Actualizados recientemente') },
+  ];
+  const KINDS = [
+    { value: 'vanilla', label: t('Vanilla') },
+    { value: 'modpack', label: t('Con modpack') },
+  ];
+  const countText = list ? (total + known.length === 1 ? t('1 servidor') : t('{n} servidores', { n: formatCount(total + known.length) })) : '';
+  const body = (
+    <>
+      {error ? (
+        <div className="banner err">
+          <Icon name="xCircle" size={20} />
+          <span>{t('No se pudo cargar la lista de servidores: {e}', { e: error.message })}</span>
+          <Button size="sm" variant="secondary" onClick={() => load(0)}>
+            {t('Reintentar')}
+          </Button>
+        </div>
+      ) : null}
+      {rows === null ? (
+        <div className="center-spinner">
+          <Spinner />
+        </div>
+      ) : rows.length === 0 && !error ? (
+        <Empty icon="server" title={t('Ningún servidor coincide')} text={t('Prueba con otras palabras o quita algunos filtros.')} />
+      ) : (
+        <div className="proj-list">
+          {rows.map((s) => (
+            <ServerRow key={s.id} s={s} ping={s.address ? pings[s.address] : { error: true }} busy={busy.has(s.id)} onPlay={() => play(s)} onAdd={() => add(s)} onCopy={() => copy(s)} />
+          ))}
+        </div>
+      )}
+      {list && fetched && fetched < total ? (
+        <div className="load-more">
+          <Button loading={loading} onClick={() => load(fetched)}>
+            {t('Cargar más')}
+          </Button>
+        </div>
+      ) : null}
+    </>
+  );
+  // the Modrinth layout: search and sort on top, the filters in the right
+  // sidebar, as Modrinth's browse page does
+  if (app.config && app.config.layout === 'modrinth') {
+    return (
+      <MrServerBrowse
+        query={query}
+        setQuery={setQuery}
+        sort={sort}
+        setSort={setSort}
+        sorts={SORTS}
+        countText={countText}
+        filtersOn={filtersOn}
+        clearFilters={clearFilters}
+        body={body}
+        filters={
+          <>
+            <FilterSwitch label={t('Solo servidores en línea')} checked={online} onChange={setOnline} />
+            <FilterSection title={t('Tipo')} summary={kind ? [KINDS.find((k) => k.value === kind).label] : []}>
+              {KINDS.map((k) => (
+                <FilterOption key={k.value} on={kind === k.value} onClick={() => setKind(kind === k.value ? '' : k.value)}>
+                  {k.label}
+                </FilterOption>
+              ))}
+            </FilterSection>
+            <FilterSection title={t('Versión del juego')} summary={version ? [version] : []}>
+              <MrVersionOptions versions={gameVersions} value={version} onChange={setVersion} />
+            </FilterSection>
+            <FilterSection title={t('Región')} summary={region ? [regionLabel(region)] : []} open={false}>
+              {REGION_IDS.map((r) => (
+                <FilterOption key={r} on={region === r} onClick={() => setRegion(region === r ? '' : r)}>
+                  {regionLabel(r)}
+                </FilterOption>
+              ))}
+            </FilterSection>
+            <FilterSection title={t('Idioma')} summary={language ? [(LANGUAGES.find(([v]) => v === language) || [, language])[1]] : []} open={false}>
+              {LANGUAGES.map(([v, l]) => (
+                <FilterOption key={v} on={language === v} onClick={() => setLanguage(language === v ? '' : v)}>
+                  {l}
+                </FilterOption>
+              ))}
+            </FilterSection>
+            {CATEGORY_GROUPS.map((g) => (
+              <FilterSection key={g.id} title={g[lang]} summary={categoriesOf(g.id).filter((c) => cats.includes(c.id)).map((c) => c.label)}>
+                {categoriesOf(g.id).map((c) => (
+                  <FilterOption key={c.id} on={cats.includes(c.id)} onClick={() => toggleCat(c.id, !cats.includes(c.id))}>
+                    {c.label}
+                  </FilterOption>
+                ))}
+              </FilterSection>
+            ))}
+          </>
+        }
+      />
+    );
+  }
 
   return (
     <div className="browse-layout">
@@ -467,56 +579,80 @@ function DiscoverServers() {
       </aside>
       <section className="browse-results">
         <div className="srv-head">
-          <span className="muted">{list ? (total + known.length === 1 ? t('1 servidor') : t('{n} servidores', { n: formatCount(total + known.length) })) : ''}</span>
+          <span className="muted">{countText}</span>
           {filtersOn ? (
-            <button
-              className="link-btn"
-              onClick={() => {
-                setKind('');
-                setVersion('');
-                setRegion('');
-                setLanguage('');
-                setCats([]);
-                setOnline(true);
-              }}
-            >
+            <button className="link-btn" onClick={clearFilters}>
               {t('Quitar filtros')}
             </button>
           ) : null}
           <span className="spacer" />
           <span className="muted small">{t('Lista de servidores de Modrinth')}</span>
         </div>
-        {error ? (
-          <div className="banner err">
-            <Icon name="xCircle" size={20} />
-            <span>{t('No se pudo cargar la lista de servidores: {e}', { e: error.message })}</span>
-            <Button size="sm" variant="secondary" onClick={() => load(0)}>
-              {t('Reintentar')}
-            </Button>
-          </div>
-        ) : null}
-        {rows === null ? (
-          <div className="center-spinner">
-            <Spinner />
-          </div>
-        ) : rows.length === 0 && !error ? (
-          <Empty icon="server" title={t('Ningún servidor coincide')} text={t('Prueba con otras palabras o quita algunos filtros.')} />
-        ) : (
-          <div className="proj-list">
-            {rows.map((s) => (
-              <ServerRow key={s.id} s={s} ping={s.address ? pings[s.address] : { error: true }} busy={busy.has(s.id)} onPlay={() => play(s)} onAdd={() => add(s)} onCopy={() => copy(s)} />
-            ))}
-          </div>
-        )}
-        {list && fetched && fetched < total ? (
-          <div className="load-more">
-            <Button loading={loading} onClick={() => load(fetched)}>
-              {t('Cargar más')}
-            </Button>
-          </div>
-        ) : null}
+        {body}
       </section>
     </div>
+  );
+}
+
+// Discover servers in the Modrinth layout (layouts/shared/browse-tab)
+function MrServerBrowse({ query, setQuery, sort, setSort, sorts, countText, filtersOn, clearFilters, body, filters }) {
+  const menu = useMenu();
+  return (
+    <div className="mr-srv">
+      <div className="mr-search lg">
+        <Icon name="search" size={25} />
+        <input value={query} maxLength={120} placeholder={t('Buscar servidores…')} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => e.key === 'Escape' && setQuery('')} />
+        {query ? (
+          <button className="mr-input-clear" aria-label={t('Borrar')} onClick={() => setQuery('')}>
+            <Icon name="x" size={20} />
+          </button>
+        ) : null}
+      </div>
+      <div className="mr-browse-bar">
+        <button ref={menu.anchor} className={`mr-combo w16 ${menu.open ? 'open' : ''}`} onClick={menu.toggle}>
+          <span className="mr-combo-prefix">{t('Ordenar por:')}</span>
+          <span className="mr-combo-value">{(sorts.find((x) => x.value === sort) || sorts[0]).label}</span>
+          <Icon name="chevronLeft" size={25} className="mr-combo-chevron" />
+        </button>
+        <Popover anchor={menu.anchor} open={menu.open} onClose={menu.close} matchWidth className="menu mr-pop mr-combo-pop">
+          {sorts.map((x) => (
+            <MenuItem key={x.value} label={x.label} checked={sort === x.value} onClick={() => (menu.close(), setSort(x.value))} />
+          ))}
+        </Popover>
+        {filtersOn ? (
+          <button className="mr-btn quiet" onClick={clearFilters}>
+            <Icon name="x" size={25} />
+            {t('Quitar filtros')}
+          </button>
+        ) : null}
+        <span className="spacer" />
+        <span className="muted">{countText}</span>
+      </div>
+      {body}
+      <p className="mr-srv-source muted">{t('Lista de servidores de Modrinth')}</p>
+      <SidebarPortal>{filters}</SidebarPortal>
+    </div>
+  );
+}
+
+// the game versions as options, the newest twelve until asked for all
+function MrVersionOptions({ versions, value, onChange }) {
+  const [all, setAll] = useState(false);
+  const shown = all ? versions : versions.slice(0, 12);
+  const list = value && !shown.includes(value) ? [value, ...shown] : shown;
+  return (
+    <>
+      {list.map((v) => (
+        <FilterOption key={v} on={value === v} onClick={() => onChange(value === v ? '' : v)}>
+          {v}
+        </FilterOption>
+      ))}
+      {versions.length > 12 ? (
+        <button className="mr-filter-more" onClick={() => setAll((x) => !x)}>
+          {all ? t('Ver menos') : t('Ver todas')}
+        </button>
+      ) : null}
+    </>
   );
 }
 

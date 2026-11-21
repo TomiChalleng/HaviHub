@@ -356,7 +356,13 @@ try {
     const guests = await app.evaluate(({ webContents }) => webContents.getAllWebContents().filter((w) => w.getType() === 'webview').map((w) => w.getURL()));
     console.log('instagram guest:', guests.join(', ').replace(socialOrigin, ''), '| asked:', embedsAsked.at(-1));
     if (guests.length !== 1 || !/instagram\.com%2Fhavikunn%2Fembed/.test(guests[0])) throw new Error('the Instagram page did not load as a guest');
-    const width = await app.evaluate(async ({ webContents }) => webContents.getAllWebContents().find((w) => w.getType() === 'webview').executeJavaScript('innerWidth'));
+    // the page's zoom is set when it loads; it reaches the guest a moment later
+    const guestWidth = () => app.evaluate(async ({ webContents }) => webContents.getAllWebContents().find((w) => w.getType() === 'webview').executeJavaScript('innerWidth'));
+    let width = await guestWidth();
+    for (let i = 0; i < 15 && (width < 300 || width > 400); i++) {
+      await page.waitForTimeout(200);
+      width = await guestWidth();
+    }
     console.log('guest page width:', width);
     // a link inside the network's page (a post) opens in the default browser (here: only noted)
     await app.evaluate(({ webContents }) => webContents.getAllWebContents().find((w) => w.getType() === 'webview').executeJavaScript("document.getElementById('post').click()", true));
