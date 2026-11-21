@@ -533,3 +533,25 @@ anota el componente de Modrinth más parecido, que servirá de plantilla:
 4. **Shell**: barra de título, barra izquierda, barra derecha (2–5).
 5. **Pantallas**: Inicio/Biblioteca, Instancia, Contenido, Browse, Proyecto, Ajustes (6–11).
 6. Interacciones y animaciones finas (1.13, 1.14).
+
+---
+
+## 14. Estado de la implementación
+
+### Hecho
+
+- **Unidades y tipografía**: el layout trabaja a 1rem = 16 px reales; `src/renderer/modrinth/mrsize.js` (`IC`, `AV`, `mpx`) da los tamaños en px para props como `<Icon size>`. Texto base 16 px, títulos a 600, sin `letter-spacing`. Las páginas y diálogos compartidos conservan su tamaño (`.page`, cuerpo de los modales, ajustes).
+- **Iconos**: `src/renderer/components/icons-modrinth.js`, generado por `scripts/icons/build-modrinth-icons.mjs` desde los SVG del propio Modrinth (y Lucide para los que no tiene). `Icon` los usa cuando el layout es Modrinth (contexto `IconSet`, en `lib/store.jsx`); el layout CurseForge sigue con los suyos.
+- **Tokens**: `lib/theme.js` deriva los que faltan (`--mr-surface-1-5/2/2-5`, `--mr-brand-gradient-*`, `--mr-brand-shadow`, `--mr-hover-brightness`, `--mr-platform-*`…) de la paleta, así que funcionan con cualquier tema.
+- **Primitivas** (`mr.css`): botones sm/md/lg/xl y tipos base/colored/outlined/quiet con sus sombras y el borde degradado, botones de icono circulares, botón partido, Combobox, inputs standard/medium/large con anillo de foco, TagItem, FilterPills, NavTabs con indicador deslizante, Toggle 48×24, Checkbox 20 px, tooltip, menús (14 px de radio, anillo surface-5), modales (degradado + blur), acordeones con `grid-template-rows`.
+- **Shell**: barra de título (flechas circulares, breadcrumbs de 16 px con avatar y desplazamiento al desbordar, estado "No hay instancias en ejecución" siempre visible, descargas solo cuando hay, controles de ventana redondos), barra izquierda (hover directo, `drop-shadow`, instancias recientes según el alto con avatar de 28 px y menú contextual, divisores de 32 px, "+" sin borde), panel con contorno y sombra interior, barra derecha en todas las páginas con el degradado, bordes y difuminados de Modrinth, primeros pasos arriba, "Jugando como" que se despliega en el sitio, ajustes como TabbedModal (cabecera, 250 px de pestañas de 44 px).
+- **Pantallas**: "Volver a jugar" en filas de 80 px (hasta 5, con las nuevas), biblioteca con barra en dos filas, grupos con línea inferior y contador, tarjetas con Play `lg`; instancia con cabecera `PageHeader`, metadatos con puntos, botones xl y pestañas en el orden de Modrinth; contenido con barra de Modrinth, tabla de filas alternas de 74 px y barra flotante de selección; Descubrir con cabecera fija, búsqueda grande, tarjetas de resultado de Modrinth y filtros como filas.
+
+### Pendiente o distinto a propósito
+
+- Las imágenes de instancia siguen con `object-fit: cover` (Havi Hub acepta fotos no cuadradas; Modrinth las recorta en su editor).
+- Descubrir mantiene el scroll infinito y el selector de fuente propios; Modrinth pagina y tiene "View:" y modos de vista.
+- Los menús emergentes no tienen la flecha de 10 px de Modrinth.
+- El divisor de instancias recientes no se arrastra (la cantidad es automática).
+- La página de proyecto, Skins, Capturas, Servidores, Ayuda y el contenido de los diálogos siguen siendo las vistas compartidas con retoques; en Modrinth el proyecto lleva su información en la barra derecha.
+- No hay barra de carga bajo la barra de título ni botón para ocultar la barra derecha.

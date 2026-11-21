@@ -19,6 +19,7 @@ import { SORTS, sortInstances, useInstanceContextMenu } from '../pages/Library.j
 import { startInstanceDrag, endInstanceDrag, useDropTarget, useInstanceDrag } from '../lib/instanceDrag.js';
 import { useInstaller } from '../pages/browseShared.jsx';
 import DropBar from '../components/DropBar.jsx';
+import { IC } from './mrsize.js';
 
 const LOADER_NAME = { fabric: 'Fabric', forge: 'Forge', neoforge: 'NeoForge', quilt: 'Quilt' };
 export const loaderText = (inst) => (inst.loader ? LOADER_NAME[inst.loader.id] || inst.loader.name || inst.loader.id : 'Vanilla');
@@ -46,7 +47,7 @@ export function MrInstanceCard({ inst, onContext, compact = false }) {
       <div className="mr-inst-art">
         <InstanceImage instance={inst} />
         <button
-          className={`mr-inst-play ${running ? 'stop' : ''}`}
+          className={`mr-icon-btn lg ${running ? 'danger' : 'brand'} mr-inst-play`}
           aria-label={running ? t('Detener') : t('Jugar')}
           data-tip={running ? t('Detener') : t('Jugar')}
           onClick={(e) => {
@@ -55,7 +56,7 @@ export function MrInstanceCard({ inst, onContext, compact = false }) {
             else app.launch(inst.id);
           }}
         >
-          {launching ? <Spinner size={20} /> : <Icon name={running ? 'stop' : 'play'} size={22} />}
+          {launching ? <Spinner size={IC.s5} /> : <Icon name={running ? 'stop' : 'play'} size={IC.s5} className={running ? '' : 'mr-play-nudge'} />}
         </button>
       </div>
       <div className="mr-inst-text">
@@ -68,47 +69,85 @@ export function MrInstanceCard({ inst, onContext, compact = false }) {
   );
 }
 
-function JumpBackIn() {
+// "Jump back in" (components/ui/world/RecentWorldsList.vue + InstanceItem.vue):
+// full-width rows of 80 px, the last played first, then up to three new ones
+function JumpBackIn({ onContext }) {
   const app = useApp();
-  const recent = useMemo(
-    () =>
-      app.instances
-        .filter((i) => i.lastLaunch)
-        .sort((a, b) => b.lastLaunch - a.lastLaunch)
-        .slice(0, 4),
-    [app.instances],
-  );
-  if (!recent.length) return null;
+  const [open, setOpen] = useState(true);
+  const items = useMemo(() => {
+    const played = app.instances.filter((i) => i.lastLaunch).sort((a, b) => b.lastLaunch - a.lastLaunch);
+    const fresh = app.instances
+      .filter((i) => !i.lastLaunch)
+      .sort((a, b) => (b.created || 0) - (a.created || 0))
+      .slice(0, 3);
+    return [...played.map((inst) => ({ inst })), ...fresh.map((inst) => ({ inst, fresh: true }))].slice(0, 5);
+  }, [app.instances]);
+  if (!items.length) return null;
   return (
-    <section className="mr-section">
-      <h2 className="mr-h2">{t('Volver a jugar')}</h2>
-      <div className="mr-jump">
-        {recent.map((inst) => {
-          const running = app.running.has(inst.id);
-          return (
-            <div key={inst.id} className="mr-card mr-jump-item" role="button" tabIndex={0} onClick={() => app.navigate({ page: 'instance', id: inst.id })} onKeyDown={(e) => e.key === 'Enter' && app.navigate({ page: 'instance', id: inst.id })}>
-              <InstanceImage instance={inst} res={128} />
-              <span className="mr-jump-text">
-                <strong>{inst.name}</strong>
-                <small>
-                  <Icon name="clock" size={14} />
-                  {t('Jugado {when}', { when: timeAgo(inst.lastLaunch).toLowerCase() })}
-                </small>
-              </span>
-              <button
-                className={`mr-btn ${running ? 'danger' : 'brand'}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (running) call('instances.stop', inst.id);
-                  else app.launch(inst.id);
-                }}
-              >
-                <Icon name={running ? 'stop' : 'play'} size={18} />
-                {running ? t('Detener') : t('Jugar')}
-              </button>
-            </div>
-          );
-        })}
+    <section className={`mr-jump-section ${open ? 'open' : ''}`}>
+      <button className="mr-jump-title" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        <span>{t('Volver a jugar')}</span>
+        <Icon name="dropdown" size={IC.s5} className="mr-chevron" />
+      </button>
+      <div className="mr-collapse" inert={open ? undefined : ''}>
+        <div>
+          <div className="mr-jump">
+            {items.map(({ inst, fresh }) => {
+              const running = app.running.has(inst.id);
+              const launching = app.launching && app.launching.has(inst.id);
+              const go = () => app.navigate({ page: 'instance', id: inst.id });
+              return (
+                <div
+                  key={inst.id}
+                  className={`mr-jump-item ${fresh ? 'fresh' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={go}
+                  onKeyDown={(e) => e.key === 'Enter' && go()}
+                  onContextMenu={(e) => onContext && onContext(e, inst)}
+                >
+                  <span className="mr-jump-art">
+                    <InstanceImage instance={inst} res={128} />
+                  </span>
+                  <span className="mr-jump-text">
+                    <span className="mr-jump-name">
+                      <strong>{inst.name}</strong>
+                      {fresh ? (
+                        <span className="mr-chip green">
+                          <Icon name="sparkle" size={IC.s4} />
+                          {t('Nueva')}
+                        </span>
+                      ) : null}
+                    </span>
+                    <small>
+                      <span className="mr-jump-ver">
+                        {loaderText(inst)} {inst.mcVersion}
+                      </span>
+                      <span className="mr-bullet" />
+                      <span>{fresh ? t('Nunca jugado') : timeAgo(inst.lastLaunch)}</span>
+                    </small>
+                  </span>
+                  <span className="mr-jump-actions" onClick={(e) => e.stopPropagation()}>
+                    {running ? (
+                      <button className="mr-btn danger" onClick={() => call('instances.stop', inst.id)}>
+                        <Icon name="stop" size={IC.s5} />
+                        {t('Detener')}
+                      </button>
+                    ) : (
+                      <button className="mr-btn green" disabled={launching} onClick={() => app.launch(inst.id)}>
+                        {launching ? <Spinner size={IC.s5} /> : <Icon name="play" size={IC.s5} />}
+                        {t('Jugar')}
+                      </button>
+                    )}
+                    <button className="mr-icon-btn quiet" aria-label={t('Más opciones')} data-tip={t('Más opciones')} onClick={(e) => onContext && onContext(e, inst)}>
+                      <Icon name="more" size={IC.s5} />
+                    </button>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -130,7 +169,7 @@ function PopularPacks() {
         <h2 className="mr-h2">{t('Modpacks populares')}</h2>
         <button className="mr-link" onClick={() => app.navigate({ page: 'browse', type: 'modpack' })}>
           {t('Ver más')}
-          <Icon name="chevronRight" size={16} />
+          <Icon name="chevronRight" size={IC.s4} />
         </button>
       </div>
       <div className="mr-popular">
@@ -140,7 +179,7 @@ function PopularPacks() {
             <span className="mr-pop-text">
               <strong>{p.title}</strong>
               <small>
-                <Icon name="download" size={14} />
+                <Icon name="download" size={IC.s4} />
                 {formatCount(p.downloads)}
               </small>
             </span>
@@ -154,7 +193,7 @@ function PopularPacks() {
                 install(p);
               }}
             >
-              {busy.has(`${p.source}:${p.id}`) ? <Spinner size={18} /> : <Icon name="download" size={18} />}
+              {busy.has(`${p.source}:${p.id}`) ? <Spinner size={IC.s5} /> : <Icon name="download" size={IC.s5} />}
             </button>
           </div>
         ))}
@@ -183,18 +222,18 @@ function Group({ name, label, list, collapsed, onToggle, onContext, canEdit }) {
   const droppable = name !== null && name !== undefined;
   const target = droppable && drag && (drag.group || '') !== name;
   return (
-    <section className={`mr-group ${over && droppable ? 'drop' : ''} ${target ? 'can-drop' : ''}`} {...(droppable ? props : {})}>
+    <section className={`mr-group ${collapsed ? '' : 'open'} ${over && droppable ? 'drop' : ''} ${target ? 'can-drop' : ''}`} {...(droppable ? props : {})}>
       <div className="mr-group-head">
         <button className="mr-group-toggle" onClick={onToggle} aria-expanded={!collapsed}>
-          <Icon name={collapsed ? 'chevronRight' : 'chevronDown'} size={18} />
+          <Icon name="dropdown" size={IC.s5} className="mr-chevron" />
           {picture ? <span className="mr-group-pic">{parseRecipe(picture.recipe) ? <GeneratedIcon recipe={parseRecipe(picture.recipe)} /> : <img src={picture.url} alt="" draggable={false} />}</span> : null}
           <span className="mr-group-name">{label}</span>
-          <span className="mr-group-count">{list.length}</span>
+          {list.length ? <span className="mr-chip mr-group-count">{list.length}</span> : null}
         </button>
         {canEdit ? (
           <>
-            <button ref={menu.anchor} className="mr-icon-btn quiet" aria-label={t('Opciones del grupo')} onClick={menu.toggle}>
-              <Icon name="moreH" size={18} />
+            <button ref={menu.anchor} className="mr-icon-btn quiet sm mr-group-menu" aria-label={t('Opciones del grupo')} data-tip={t('Opciones del grupo')} onClick={menu.toggle}>
+              <Icon name="moreH" size={IC.s4} />
             </button>
             <Popover anchor={menu.anchor} open={menu.open} onClose={menu.close} align="right" className="menu mr-pop">
               <MenuItem icon="image" label={t('Cambiar imagen…')} onClick={() => (menu.close(), actions.editGroupImage(app, name))} />
@@ -314,56 +353,60 @@ export default function MrHome() {
 
   return (
     <div className="mr-page mr-home">
-      <JumpBackIn />
+      <JumpBackIn onContext={ctx.show} />
       <PopularPacks />
-      <section className="mr-section">
+      <section className="mr-section mr-library">
         <h2 className="mr-h2">{t('Biblioteca')}</h2>
-        <div className="mr-toolbar">
-          <div className="mr-search">
-            <Icon name="search" size={18} />
-            <input value={search} maxLength={120} placeholder={t('Buscar en tu biblioteca…')} onChange={(e) => setSearch(e.target.value)} />
-            {search ? (
-              <button className="mr-icon-btn quiet" aria-label={t('Borrar')} onClick={() => setSearch('')}>
-                <Icon name="x" size={16} />
-              </button>
-            ) : null}
+        {/* two rows, as library-toolbar/index.vue: search and the buttons, then sort, group */}
+        <div className="mr-lib-toolbar">
+          <div className="mr-lib-row">
+            <div className="mr-search grow">
+              <Icon name="search" size={IC.s5} />
+              <input value={search} maxLength={120} placeholder={t('Buscar en tu biblioteca…')} onChange={(e) => setSearch(e.target.value)} />
+              {search ? (
+                <button className="mr-input-clear" aria-label={t('Borrar')} onClick={() => setSearch('')}>
+                  <Icon name="x" size={IC.s4} />
+                </button>
+              ) : null}
+            </div>
+            <button
+              className="mr-btn"
+              onClick={async () => {
+                const n = await app.prompt({ title: t('Crear grupo'), label: t('Nombre del grupo'), maxLength: LIMITS.groupName, placeholder: 'Vanilla, Horror, Técnicos…', confirmLabel: t('Crear'), validate: (v) => (groups.includes(v.trim()) ? t('Ya existe un grupo con ese nombre') : '') });
+                if (n) call('instances.createGroup', n).catch(app.showError);
+              }}
+            >
+              <Icon name="squarePlus" size={IC.s5} />
+              {t('Nuevo grupo')}
+            </button>
+            <button ref={importMenu.anchor} className="mr-btn" onClick={importMenu.toggle}>
+              <Icon name="import" size={IC.s5} />
+              {t('Importar')}
+            </button>
+            <button className="mr-btn brand" onClick={openCreate}>
+              <Icon name="plus" size={IC.s5} />
+              {t('Crear instancia')}
+            </button>
           </div>
-          <button ref={sortMenu.anchor} className="mr-combo" onClick={sortMenu.toggle}>
-            <span className="mr-combo-prefix">{t('Ordenar:')}</span>
-            {(SORTS.find((s) => s.id === sort) || SORTS[0]).label()}
-            <Icon name="chevronDown" size={16} />
-          </button>
-          <button ref={groupMenu.anchor} className="mr-combo" onClick={groupMenu.toggle}>
-            <span className="mr-combo-prefix">{t('Agrupar:')}</span>
-            {{ group: t('Grupo'), loader: t('Cargador'), version: t('Versión'), none: t('Nada') }[groupBy]}
-            <Icon name="chevronDown" size={16} />
-          </button>
-          <span className="spacer" />
-          <button
-            className="mr-btn"
-            onClick={async () => {
-              const n = await app.prompt({ title: t('Crear grupo'), label: t('Nombre del grupo'), maxLength: LIMITS.groupName, placeholder: 'Vanilla, Horror, Técnicos…', confirmLabel: t('Crear'), validate: (v) => (groups.includes(v.trim()) ? t('Ya existe un grupo con ese nombre') : '') });
-              if (n) call('instances.createGroup', n).catch(app.showError);
-            }}
-          >
-            <Icon name="groupAdd" size={18} />
-            {t('Nuevo grupo')}
-          </button>
-          <button ref={importMenu.anchor} className="mr-btn" onClick={importMenu.toggle}>
-            <Icon name="import" size={18} />
-            {t('Importar')}
-          </button>
-          <button className="mr-btn brand" onClick={openCreate}>
-            <Icon name="plus" size={18} />
-            {t('Crear instancia')}
-          </button>
-          <Popover anchor={sortMenu.anchor} open={sortMenu.open} onClose={sortMenu.close} className="menu mr-pop">
+          <div className="mr-lib-row">
+            <button ref={sortMenu.anchor} className={`mr-combo ${sortMenu.open ? 'open' : ''}`} onClick={sortMenu.toggle} aria-label={t('Ordenar por')} data-tip={t('Ordenar por')}>
+              <Icon name="sort" size={IC.s5} className="mr-combo-ico" />
+              <span className="mr-combo-value">{(SORTS.find((s) => s.id === sort) || SORTS[0]).label()}</span>
+              <Icon name="chevronLeft" size={IC.s5} className="mr-combo-chevron" />
+            </button>
+            <button ref={groupMenu.anchor} className={`mr-combo ${groupMenu.open ? 'open' : ''}`} onClick={groupMenu.toggle} aria-label={t('Agrupar por')} data-tip={t('Agrupar por')}>
+              <Icon name="grid" size={IC.s5} className="mr-combo-ico" />
+              <span className="mr-combo-value">{{ group: t('Grupo'), loader: t('Cargador'), version: t('Versión'), none: t('Nada') }[groupBy]}</span>
+              <Icon name="chevronLeft" size={IC.s5} className="mr-combo-chevron" />
+            </button>
+          </div>
+          <Popover anchor={sortMenu.anchor} open={sortMenu.open} onClose={sortMenu.close} className="menu mr-pop mr-combo-pop">
             <MenuHeader>{t('Ordenar por')}</MenuHeader>
             {SORTS.map((s) => (
               <MenuItem key={s.id} label={s.label()} checked={sort === s.id} onClick={() => (sortMenu.close(), app.updateConfig({ librarySort: s.id }))} />
             ))}
           </Popover>
-          <Popover anchor={groupMenu.anchor} open={groupMenu.open} onClose={groupMenu.close} className="menu mr-pop">
+          <Popover anchor={groupMenu.anchor} open={groupMenu.open} onClose={groupMenu.close} className="menu mr-pop mr-combo-pop">
             <MenuHeader>{t('Agrupar por')}</MenuHeader>
             {[
               ['group', t('Grupo')],
@@ -385,7 +428,7 @@ export default function MrHome() {
           </div>
         ) : !instances.length ? (
           <div className="mr-empty">
-            <Icon name="cube" size={40} />
+            <Icon name="cube" size={IC.s6 * 2} />
             <strong>{t('Todavía no tienes perfiles')}</strong>
             <span>{t('Crea uno, importa tus perfiles de otro launcher o instala un modpack.')}</span>
             <div className="row">

@@ -1,26 +1,28 @@
-// The Modrinth layout: a title bar with back/forward and breadcrumbs, a
-// narrow icon bar on the left (pages, recent instances, create, settings,
-// account), the page in a rounded panel, and a sidebar on the right with the
-// account, first steps, downloads and Havikun's channels. Same features as the CurseForge
-// layout, arranged the way the Modrinth app arranges them.
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+// The Modrinth layout: a title bar with back/forward, breadcrumbs and what is
+// running, a narrow icon bar on the left (pages, recent instances, create,
+// settings, account), the page in a rounded panel, and a sidebar on the right
+// with first steps, the account and Havikun's channels. Same features as the
+// CurseForge layout, arranged and drawn the way the Modrinth app does
+// (apps/app-frontend/src/App.vue and app/shell/* in github.com/modrinth/code).
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Icon from '../components/Icon.jsx';
 import { Progress, Spinner } from '../components/ui.jsx';
-import { Popover, MenuItem, MenuSeparator, useMenu } from '../components/Menu.jsx';
-import { Logo, AccountAvatar, AccountMenuContent, DownloadsPanel } from '../components/Shell.jsx';
+import { Popover, MenuItem, MenuSeparator, useMenu, useContextMenu } from '../components/Menu.jsx';
+import { Logo, AccountAvatar, AccountMenuContent, DownloadsPanel, OfflineAccountButton } from '../components/Shell.jsx';
 import InstanceImage from '../components/InstanceImage.jsx';
 import ImportLaunchersDialog from '../dialogs/ImportLaunchersDialog.jsx';
+import AddAccountDialog from '../dialogs/AddAccountDialog.jsx';
 import ErrorBoundary from '../components/ErrorBoundary.jsx';
 import { useApp } from '../lib/store.jsx';
 import { call } from '../lib/api.js';
 import { t } from '../lib/i18n.js';
-import { timeAgo } from '../lib/format.js';
 import MrSocials from './MrSocials.jsx';
 import { useDropTarget } from '../lib/instanceDrag.js';
 import { capturingInput } from '../lib/inputCapture.js';
 import { MrNavDecor, MrTitleDecor } from './MrSeasonal.jsx';
 import { SeasonBackdrop } from '../components/Seasonal.jsx';
+import { IC, AV } from './mrsize.js';
 
 // ---------------------------------------------------------------- sidebar slot
 // Pages put their own sidebar content (browse filters) in the right sidebar.
@@ -32,23 +34,21 @@ export function SidebarPortal({ children }) {
   return createPortal(children, node);
 }
 
-// pages with the right sidebar
-const SIDEBAR_PAGES = new Set(['home', 'library', 'instance', 'browse', 'discover']);
-
 // ---------------------------------------------------------------- title bar
 function crumbsFor(route, app) {
   const inst = route.instanceId || route.id ? app.instances.find((i) => i.id === (route.instanceId || route.id)) : null;
   const TYPE = { modpack: t('Modpacks'), mod: t('Mods'), resourcepack: t('Resource Packs'), shader: t('Shaders'), datapack: t('Data Packs'), world: t('Mundos') };
   const TAB = { worlds: t('Mundos'), logs: t('Registros'), screenshots: t('Capturas') };
+  const instCrumb = (i, to) => ({ label: i ? i.name : route.id, inst: i, to });
   switch (route.page) {
     case 'instance':
-      return [{ label: t('Biblioteca'), to: { page: 'library' } }, { label: inst ? inst.name : route.id, to: { page: 'instance', id: route.id } }, ...(route.tab && TAB[route.tab] ? [{ label: TAB[route.tab] }] : [])];
+      return [{ label: t('Biblioteca'), to: { page: 'library' } }, instCrumb(inst, { page: 'instance', id: route.id }), ...(route.tab && TAB[route.tab] ? [{ label: TAB[route.tab] }] : [])];
     case 'browse':
     case 'discover':
-      if (inst) return [{ label: t('Biblioteca'), to: { page: 'library' } }, { label: inst.name, to: { page: 'instance', id: inst.id } }, { label: t('Agregar contenido') }];
+      if (inst) return [{ label: t('Biblioteca'), to: { page: 'library' } }, instCrumb(inst, { page: 'instance', id: inst.id }), { label: t('Agregar contenido') }];
       return [{ label: t('Descubrir contenido') }, { label: TYPE[route.type || 'modpack'] || '' }];
     case 'project':
-      return inst ? [{ label: inst.name, to: { page: 'instance', id: inst.id } }, { label: t('Proyecto') }] : [{ label: t('Descubrir contenido'), to: { page: 'browse', type: 'modpack' } }, { label: t('Proyecto') }];
+      return inst ? [instCrumb(inst, { page: 'instance', id: inst.id }), { label: t('Proyecto') }] : [{ label: t('Descubrir contenido'), to: { page: 'browse', type: 'modpack' } }, { label: t('Proyecto') }];
     case 'servers':
       return [{ label: t('Servidores') }];
     case 'skins':
@@ -64,6 +64,104 @@ function crumbsFor(route, app) {
   }
 }
 
+// Breadcrumbs: when they don't fit, they fade at the edges and scroll into
+// view while hovered (app/shell/title-bar/breadcrumbs.vue)
+function Crumbs({ crumbs }) {
+  const app = useApp();
+  const outer = useRef(null);
+  const inner = useRef(null);
+  const [overflow, setOverflow] = useState(0);
+  useLayoutEffect(() => {
+    const check = () => {
+      if (!outer.current || !inner.current) return;
+      const cs = getComputedStyle(outer.current);
+      const room = outer.current.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      setOverflow(Math.max(0, Math.ceil(inner.current.scrollWidth - room)));
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    if (outer.current) ro.observe(outer.current);
+    if (inner.current) ro.observe(inner.current);
+    return () => ro.disconnect();
+  }, [crumbs]);
+  return (
+    <nav ref={outer} className={`mr-crumbs ${overflow ? 'overflowing' : ''}`} aria-label={t('Ubicación')} style={overflow ? { '--scroll': `-${overflow}px` } : undefined}>
+      <div ref={inner} className="mr-crumbs-inner">
+        {crumbs.map((c, i) => {
+          const last = i === crumbs.length - 1;
+          const body = (
+            <>
+              {c.inst ? (
+                <span className="mr-crumb-avatar">
+                  <InstanceImage instance={c.inst} res={128} />
+                </span>
+              ) : null}
+              <span>{c.label}</span>
+            </>
+          );
+          return (
+            <span key={i} className="mr-crumb-wrap">
+              {c.to && !last ? (
+                <button className="mr-crumb" onClick={() => app.navigate(c.to)}>
+                  {body}
+                </button>
+              ) : (
+                <span className="mr-crumb current" aria-current={last ? 'page' : undefined}>
+                  {body}
+                </span>
+              )}
+              {!last ? <Icon name="chevronRight" size={IC.s5} className="mr-crumb-sep" /> : null}
+            </span>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+// What is running: always there, like Modrinth's action bar
+function RunningStatus() {
+  const app = useApp();
+  const playing = app.instances.filter((i) => app.running.has(i.id));
+  const [pick, setPick] = useState(null);
+  const more = useMenu();
+  const current = playing.find((i) => i.id === pick) || playing[0];
+  if (!current) {
+    return (
+      <div className="mr-status">
+        <span className="mr-status-dot" />
+        <span className="mr-status-idle">{t('No hay instancias en ejecución')}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="mr-status">
+      <span className="mr-online" aria-hidden="true" />
+      <button className="mr-status-name" onClick={() => app.navigate({ page: 'instance', id: current.id })} data-tip={t('Ver instancia')}>
+        {current.name}
+      </button>
+      {playing.length > 1 ? (
+        <>
+          <button ref={more.anchor} className="mr-status-more" onClick={more.toggle} aria-label={t('Más instancias en ejecución')} data-tip={t('Más instancias en ejecución')}>
+            <Icon name="dropdown" size={IC.s4} className={more.open ? 'flip' : ''} />
+          </button>
+          <Popover anchor={more.anchor} open={more.open} onClose={more.close} align="right" className="menu mr-pop">
+            {playing.map((i) => (
+              <MenuItem key={i.id} label={i.name} checked={i.id === current.id} onClick={() => (more.close(), setPick(i.id))} />
+            ))}
+          </Popover>
+        </>
+      ) : null}
+      <button className="mr-status-ico stop" onClick={() => call('instances.stop', current.id)} aria-label={t('Detener instancia')} data-tip={t('Detener instancia')}>
+        <Icon name="stop" size={IC.s5} />
+      </button>
+      <button className="mr-status-ico" onClick={() => app.navigate({ page: 'instance', id: current.id, tab: 'logs' })} aria-label={t('Ver registros')} data-tip={t('Ver registros')}>
+        <Icon name="terminal" size={IC.s5} />
+      </button>
+    </div>
+  );
+}
+
 function TitleBar() {
   const app = useApp();
   const { back, forward, history, maximized, route, tasks } = app;
@@ -72,62 +170,39 @@ function TitleBar() {
   const more = useMenu();
   const running = tasks.filter((x) => x.status === 'running');
   const progress = running.length ? running.reduce((a, x) => a + (x.progress || 0), 0) / running.length : 0;
-  const playing = app.instances.filter((i) => app.running.has(i.id));
+  const canBack = history.index > 0;
+  const canForward = history.index < history.stack.length - 1;
   return (
     <header className="mr-titlebar">
       <MrTitleDecor />
       <div className="mr-tb-left">
         <span className="mr-wordmark">
-          <Logo size={26} />
+          <Logo size={35} />
           <span>Havi Hub</span>
         </span>
-        <button className="mr-nav-arrow" disabled={history.index === 0} onClick={back} aria-label={t('Atrás')} data-tip={t('Atrás')}>
-          <Icon name="chevronLeft" size={16} />
-        </button>
-        <button className="mr-nav-arrow" disabled={history.index >= history.stack.length - 1} onClick={forward} aria-label={t('Adelante')} data-tip={t('Adelante')}>
-          <Icon name="chevronRight" size={16} />
-        </button>
-        <nav className="mr-crumbs" aria-label={t('Ubicación')}>
-          {crumbs.map((c, i) => (
-            <span key={i} className="mr-crumb-wrap">
-              {i ? <Icon name="chevronRight" size={14} className="mr-crumb-sep" /> : null}
-              {c.to && i < crumbs.length - 1 ? (
-                <button className="mr-crumb" onClick={() => app.navigate(c.to)}>
-                  {c.label}
-                </button>
-              ) : (
-                <span className="mr-crumb current">{c.label}</span>
-              )}
-            </span>
-          ))}
-        </nav>
+        <div className="mr-nav-arrows">
+          <button className="mr-nav-arrow" disabled={!canBack} onClick={back} aria-label={t('Atrás')} data-tip={t('Atrás')}>
+            <Icon name="chevronLeft" size={IC.s4} />
+          </button>
+          <button className="mr-nav-arrow" disabled={!canForward} onClick={forward} aria-label={t('Adelante')} data-tip={t('Adelante')}>
+            <Icon name="chevronRight" size={IC.s4} />
+          </button>
+        </div>
+        <Crumbs crumbs={crumbs} />
       </div>
       <div className="mr-tb-drag" />
       <div className="mr-tb-actions">
-        {playing.length ? (
-          <button className="mr-playing" onClick={() => app.navigate({ page: 'instance', id: playing[0].id })} data-tip={t('Jugando')}>
-            <span className="mr-playing-dot" />
-            <span className="mr-playing-name">{playing[0].name}</span>
-            <span
-              className="mr-playing-stop"
-              role="button"
-              aria-label={t('Detener')}
-              onClick={(e) => {
-                e.stopPropagation();
-                call('instances.stop', playing[0].id);
-              }}
-            >
-              <Icon name="stop" size={14} />
-            </span>
+        {/* like Modrinth: the downloads button is there while there are downloads */}
+        {tasks.length || dl.open ? (
+          <button ref={dl.anchor} className={`mr-icon-btn quiet ${running.length ? 'brand-text' : ''} ${dl.open ? 'on' : ''}`} onClick={dl.toggle} aria-label={t('Descargas')} data-tip={t('Descargas')}>
+            {running.length ? <span className="mr-ring" style={{ '--p': `${Math.round(progress * 100)}%` }} /> : null}
+            <Icon name="download" size={IC.s5} />
           </button>
         ) : null}
-        <button ref={dl.anchor} className={`mr-tb-btn ${dl.open ? 'on' : ''}`} onClick={dl.toggle} aria-label={t('Descargas')} data-tip={t('Descargas')}>
-          {running.length ? <span className="mr-ring" style={{ '--p': `${Math.round(progress * 100)}%` }} /> : null}
-          <Icon name="download" size={18} />
+        <button ref={more.anchor} className={`mr-icon-btn quiet ${more.open ? 'on' : ''}`} onClick={more.toggle} aria-label={t('Más opciones')} data-tip={t('Más opciones')}>
+          <Icon name="moreH" size={IC.s5} />
         </button>
-        <button ref={more.anchor} className={`mr-tb-btn ${more.open ? 'on' : ''}`} onClick={more.toggle} aria-label={t('Más opciones')}>
-          <Icon name="moreH" size={18} />
-        </button>
+        <RunningStatus />
         <Popover anchor={dl.anchor} open={dl.open} onClose={dl.close} align="right" className="downloads-pop mr-pop">
           <DownloadsPanel />
         </Popover>
@@ -141,13 +216,13 @@ function TitleBar() {
       </div>
       <div className="mr-window">
         <button className="mr-win-btn" onClick={() => call('app.window', 'minimize')} aria-label={t('Minimizar')}>
-          <Icon name="minimize" size={15} />
+          <Icon name="minimize" size={IC.s5} />
         </button>
         <button className="mr-win-btn" onClick={() => call('app.window', 'maximize')} aria-label={maximized ? t('Restaurar') : t('Maximizar')}>
-          <Icon name={maximized ? 'restore' : 'maximize'} size={14} />
+          <Icon name={maximized ? 'restore' : 'maximize'} size={IC.s5} />
         </button>
         <button className="mr-win-btn close" onClick={() => call('app.window', 'close')} aria-label={t('Cerrar')}>
-          <Icon name="x" size={17} />
+          <Icon name="x" size={IC.s5} />
         </button>
       </div>
     </header>
@@ -155,39 +230,66 @@ function TitleBar() {
 }
 
 // ---------------------------------------------------------------- left bar
-function NavButton({ icon, label, active, sub, onClick, children, anchorRef, className = '' }) {
+function NavButton({ icon, label, active, sub, onClick, children, anchorRef, className = '', iconClass }) {
   return (
     <button ref={anchorRef} className={`mr-navbtn ${active ? 'active' : ''} ${sub ? 'sub' : ''} ${className}`} onClick={onClick} aria-label={label} data-tip={label} data-tip-pos="right">
-      {children || <Icon name={icon} size={24} />}
+      {children || <Icon name={icon} size={IC.s6} className={iconClass} />}
     </button>
   );
 }
 
-// a recent instance in the bar; dropping a profile here does nothing special,
-// but the library below it takes drops (see MrHome)
-function QuickInstance({ inst, active }) {
+// a recent instance in the bar (QuickInstanceSwitcher.vue): its picture at
+// 28 px in a round button; right click to play, stop, open its folder
+function QuickInstance({ inst, active, onContext }) {
   const app = useApp();
-  const running = app.running.has(inst.id);
   return (
-    <button className={`mr-quick ${active ? 'active' : ''} ${running ? 'running' : ''}`} onClick={() => app.navigate({ page: 'instance', id: inst.id })} aria-label={inst.name} data-tip={inst.name} data-tip-pos="right">
-      <InstanceImage instance={inst} res={128} />
-      {running ? <span className="mr-quick-dot" /> : null}
+    <button
+      className={`mr-navbtn mr-quick ${active ? 'active' : ''}`}
+      onClick={() => app.navigate({ page: 'instance', id: inst.id })}
+      onContextMenu={(e) => onContext(e, inst)}
+      aria-label={inst.name}
+      data-tip={inst.name}
+      data-tip-pos="right"
+    >
+      <span className="mr-quick-art">
+        <InstanceImage instance={inst} res={128} />
+      </span>
     </button>
   );
 }
+
+const QUICK_MAX = 20; // use-quick-instance-limit.ts
 
 function NavBar() {
   const app = useApp();
   const { route, navigate, instances, activeAccount } = app;
   const acc = useMenu();
-  const recent = useMemo(
-    () =>
-      [...instances]
-        .filter((i) => i.lastLaunch)
-        .sort((a, b) => b.lastLaunch - a.lastLaunch)
-        .slice(0, 4),
-    [instances],
-  );
+  const ctx = useContextMenu();
+  const quick = useRef(null);
+  const foot = useRef(null);
+  const [room, setRoom] = useState(0);
+  // newest first: played or created, whichever came last
+  const sorted = useMemo(() => {
+    const when = (i) => Math.max(i.lastLaunch || 0, i.created || 0);
+    return [...instances].sort((a, b) => when(b) - when(a) || a.name.localeCompare(b.name));
+  }, [instances]);
+  // as many as fit between the pages and Settings
+  useLayoutEffect(() => {
+    const el = quick.current;
+    if (!el) return undefined;
+    const measure = () => {
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 20;
+      const divider = 0.85 * rem + 1; // the line and its room above and below
+      const gap = rem / 4;
+      const footer = (foot.current ? foot.current.offsetHeight : 0) + gap;
+      setRoom(Math.max(0, Math.floor((el.clientHeight - footer - 2 * divider - gap) / (3 * rem + gap))));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const recent = sorted.slice(0, Math.min(room, QUICK_MAX));
   const page = route.page;
   const inInstance = route.page === 'instance' || ((route.page === 'browse' || route.page === 'project') && route.instanceId);
   const browsing = (page === 'browse' || page === 'discover' || page === 'project') && !route.instanceId;
@@ -202,65 +304,148 @@ function NavBar() {
       app.showError(e);
     }
   });
+  const ctxInst = ctx.data;
+  const ctxRunning = ctxInst && app.running.has(ctxInst.id);
   return (
     <nav className="mr-navbar">
       <MrNavDecor />
       <div className={`mr-navbtn-wrap ${libOver ? 'drop' : ''}`} {...libProps}>
-        <NavButton icon="play" label={t('Inicio')} active={page === 'home' || page === 'library'} sub={inInstance} onClick={() => navigate({ page: 'library' })} />
+        <NavButton icon="play" iconClass="mr-play-nudge" label={t('Inicio')} active={page === 'home' || page === 'library'} sub={inInstance && page !== 'instance'} onClick={() => navigate({ page: 'library' })} />
       </div>
-      <NavButton icon="compass" label={t('Descubrir contenido')} active={browsing} onClick={() => navigate({ page: 'browse', type: route.type && browsing ? route.type : 'modpack' })} />
+      <NavButton icon="compass" label={t('Descubrir contenido')} active={browsing && page !== 'project'} sub={page === 'project' && !route.instanceId} onClick={() => navigate({ page: 'browse', type: route.type && browsing ? route.type : 'modpack' })} />
       <NavButton icon="shirt" label={t('Skins')} active={page === 'skins'} onClick={() => navigate({ page: 'skins' })} />
       <NavButton icon="image" label={t('Capturas')} active={page === 'screenshots'} onClick={() => navigate({ page: 'screenshots' })} />
-      <NavButton icon="server" label={t('Servidores')} active={page === 'servers'} onClick={() => navigate({ page: 'servers' })} />
-      {recent.length ? <span className="mr-nav-sep" /> : null}
-      {recent.map((i) => (
-        <QuickInstance key={i.id} inst={i} active={route.page === 'instance' && route.id === i.id} />
-      ))}
-      <NavButton
-        icon="plus"
-        label={t('Crear instancia')}
-        className="mr-create"
-        onClick={() => {
-          if (page !== 'library' && page !== 'home') navigate({ page: 'library' });
-          setTimeout(() => window.dispatchEvent(new CustomEvent('havihub:create-instance')), page === 'library' || page === 'home' ? 0 : 80);
-        }}
-      />
-      <span className="mr-nav-spacer" />
+      <NavButton icon="serverStack" label={t('Servidores')} active={page === 'servers'} onClick={() => navigate({ page: 'servers' })} />
+      <div ref={quick} className="mr-quick-zone">
+        {recent.length ? (
+          <div className="mr-nav-divider top">
+            <span />
+          </div>
+        ) : null}
+        <div className="mr-quick-list" aria-label={t('Instancias recientes')}>
+          {recent.map((i) => (
+            <QuickInstance key={i.id} inst={i} active={route.page === 'instance' && route.id === i.id} onContext={ctx.show} />
+          ))}
+        </div>
+        <div className="mr-nav-divider">
+          <span />
+        </div>
+        <div ref={foot} className="mr-quick-foot">
+          <NavButton
+            icon="plus"
+            label={t('Crear instancia')}
+            onClick={() => {
+              if (page !== 'library' && page !== 'home') navigate({ page: 'library' });
+              setTimeout(() => window.dispatchEvent(new CustomEvent('havihub:create-instance')), page === 'library' || page === 'home' ? 0 : 80);
+            }}
+          />
+        </div>
+      </div>
       <NavButton icon="settings" label={t('Ajustes')} active={page === 'settings'} onClick={() => navigate({ page: 'settings', section: 'launcher' })} />
-      <NavButton label={activeAccount ? activeAccount.name : t('Iniciar sesión')} anchorRef={acc.anchor} active={acc.open} onClick={acc.toggle} className="mr-account">
-        {activeAccount ? <AccountAvatar account={activeAccount} size={32} /> : <Icon name="logIn" size={24} className="mr-login" />}
+      <NavButton label={activeAccount ? activeAccount.name : t('Iniciar sesión')} anchorRef={acc.anchor} active={false} onClick={acc.toggle} className={`mr-account ${acc.open ? 'open' : ''}`}>
+        {activeAccount ? <AccountAvatar account={activeAccount} size={AV.a32} /> : <Icon name="logIn" size={IC.s6} className="mr-login" />}
       </NavButton>
       <Popover anchor={acc.anchor} open={acc.open} onClose={acc.close} side="right" className="menu account-menu mr-pop">
         <AccountMenuContent onClose={acc.close} />
       </Popover>
+      {ctxInst ? (
+        <Popover point={ctx.point} open={ctx.open} onClose={ctx.close} className="menu mr-pop">
+          {ctxRunning ? (
+            <MenuItem icon="stop" label={t('Detener')} danger onClick={() => (ctx.close(), call('instances.stop', ctxInst.id))} />
+          ) : (
+            <MenuItem icon="play" label={t('Jugar')} onClick={() => (ctx.close(), app.launch(ctxInst.id))} />
+          )}
+          <MenuSeparator />
+          <MenuItem icon="eye" label={t('Ver instancia')} onClick={() => (ctx.close(), navigate({ page: 'instance', id: ctxInst.id }))} />
+          <MenuItem icon="folderOpen" label={t('Abrir carpeta')} onClick={() => (ctx.close(), call('instances.openFolder', ctxInst.id))} />
+        </Popover>
+      ) : null}
     </nav>
   );
 }
 
 // ---------------------------------------------------------------- right sidebar
+// "Playing as": the account, opening in place to switch, add or remove
+// (features/minecraft-accounts/accounts-card.vue)
 function PlayingAs() {
   const app = useApp();
-  const acc = useMenu();
+  const [open, setOpen] = useState(false);
   const a = app.activeAccount;
   const streamer = app.config && app.config.privacy && app.config.privacy.streamerMode;
+  const hide = (name) => (streamer ? '••••••' : name);
+  const setActive = async (id) => {
+    try {
+      await call('accounts.setActive', id);
+      await app.refreshAccounts();
+    } catch (e) {
+      app.showError(e);
+    }
+  };
+  const remove = async (acc) => {
+    const ok = await app.confirm({ title: t('Cerrar sesión'), message: t('¿Quitar la cuenta {name} de Havi Hub? Tendrás que volver a iniciar sesión para jugar online.', { name: acc.name }), confirmLabel: t('Cerrar sesión'), danger: true });
+    if (!ok) return;
+    try {
+      await call('accounts.remove', acc.id);
+      await app.refreshAccounts();
+    } catch (e) {
+      app.showError(e);
+    }
+  };
   return (
     <section className="mr-side-section">
-      <h3>{t('Jugando como')}</h3>
-      <button ref={acc.anchor} className="mr-account-card" onClick={acc.toggle}>
-        <AccountAvatar account={a} size={36} />
-        <span className="mr-account-text">
-          <strong>{a ? (streamer ? '••••••' : a.name) : t('Sin cuenta')}</strong>
-          <small>{a ? (a.type === 'Offline' ? t('Cuenta offline') : t('Cuenta de Microsoft')) : t('Agrega una para jugar online')}</small>
-        </span>
-        <Icon name={acc.open ? 'chevronUp' : 'chevronDown'} size={18} />
-      </button>
-      <Popover anchor={acc.anchor} open={acc.open} onClose={acc.close} align="right" matchWidth className="menu account-menu mr-pop">
-        <AccountMenuContent onClose={acc.close} />
-      </Popover>
+      <h3 className="mr-side-title">{t('Jugando como')}</h3>
+      {!app.accounts.length ? (
+        <div className="mr-account-empty">
+          <span>{t('No has iniciado sesión.')}</span>
+          <button className="mr-btn brand" onClick={() => app.openDialog(AddAccountDialog, {})}>
+            <Icon name="logIn" size={IC.s5} />
+            {t('Iniciar sesión en Minecraft')}
+          </button>
+        </div>
+      ) : (
+        <div className={`mr-account-box ${open ? 'open' : ''}`}>
+          <button className="mr-account-card" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+            <span className="mr-account-face">
+              <AccountAvatar account={a} size={AV.a36} />
+            </span>
+            <span className="mr-account-text">
+              <span className="mr-account-name">{a ? hide(a.name) : t('Elige una cuenta')}</span>
+              <small>{a && a.type === 'Offline' ? t('Cuenta offline') : t('Cuenta de Minecraft')}</small>
+            </span>
+            <Icon name="dropdown" size={IC.s5} className="mr-chevron" />
+          </button>
+          <div className="mr-collapse" inert={open ? undefined : ''}>
+            <div>
+              <div className="mr-account-list">
+                {app.accounts.map((acc) => (
+                  <div key={acc.id} className="mr-account-row">
+                    <button className={`mr-account-pick ${acc.active ? 'on' : ''}`} onClick={() => setActive(acc.id)}>
+                      <Icon name={acc.active ? 'radioChecked' : 'radio'} size={IC.s5} className="mr-radio" />
+                      <AccountAvatar account={acc} size={AV.a24} />
+                      <span>{hide(acc.name)}</span>
+                    </button>
+                    <button className="mr-icon-btn danger-hover" onClick={() => remove(acc)} aria-label={t('Quitar cuenta')} data-tip={t('Quitar cuenta')}>
+                      <Icon name="trash" size={IC.s5} />
+                    </button>
+                  </div>
+                ))}
+                <div className="mr-account-add">
+                  <button className="mr-btn" onClick={() => app.openDialog(AddAccountDialog, {})}>
+                    <Icon name="plus" size={IC.s5} />
+                    {t('Agregar cuenta')}
+                  </button>
+                  <OfflineAccountButton className="mr-account-offline" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
 
+// first steps (features/onboarding/checklist.vue)
 function FirstSteps() {
   const app = useApp();
   const [open, setOpen] = useState(true);
@@ -271,21 +456,31 @@ function FirstSteps() {
   ];
   if (steps.every((s) => s.done) || (app.config && app.config.firstStepsHidden)) return null;
   return (
-    <section className="mr-side-section">
-      <button className="mr-side-toggle" onClick={() => setOpen((o) => !o)}>
-        <h3>{t('Primeros pasos')}</h3>
-        <Icon name={open ? 'chevronUp' : 'chevronDown'} size={18} />
-      </button>
-      {open ? (
-        <div className="mr-steps">
-          {steps.map((s, i) => (
-            <button key={i} className={`mr-step ${s.done ? 'done' : ''}`} onClick={s.done ? undefined : s.go} disabled={s.done}>
-              <Icon name={s.done ? 'checkCircle' : 'circle'} size={20} />
-              <span>{s.label}</span>
-            </button>
-          ))}
+    <section className="mr-side-section mr-checklist-section">
+      <div className={`mr-checklist ${open ? 'open' : ''}`}>
+        <button className="mr-checklist-head" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+          <span>{t('Primeros pasos')}</span>
+          <Icon name="dropdown" size={IC.s5} className="mr-chevron" />
+        </button>
+        <div className="mr-collapse" inert={open ? undefined : ''}>
+          <div>
+            <div className="mr-checklist-body">
+              {steps.map((s, i) => (
+                <button key={i} className={`mr-step ${s.done ? 'done' : ''}`} onClick={s.done ? undefined : s.go} disabled={s.done}>
+                  {s.done ? (
+                    <span className="mr-step-check">
+                      <Icon name="check" size={IC.s3} />
+                    </span>
+                  ) : (
+                    <Icon name="radio" size={IC.s5} />
+                  )}
+                  <span className="mr-step-label">{s.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-      ) : null}
+      </div>
     </section>
   );
 }
@@ -296,7 +491,7 @@ function RunningTasks() {
   if (!running.length) return null;
   return (
     <section className="mr-side-section">
-      <h3>{t('Descargando')}</h3>
+      <h3 className="mr-side-title">{t('Descargando')}</h3>
       <div className="mr-side-tasks">
         {running.map((x) => (
           <div key={x.id} className="mr-side-task">
@@ -310,18 +505,45 @@ function RunningTasks() {
   );
 }
 
+// the fades at the top and bottom of the sidebar while there is more to scroll
+function useScrollFades(ref) {
+  const [fades, setFades] = useState({ top: false, bottom: false });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const check = () => setFades({ top: el.scrollTop > 1, bottom: el.scrollTop + el.clientHeight < el.scrollHeight - 1 });
+    check();
+    el.addEventListener('scroll', check, { passive: true });
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    for (const c of el.children) ro.observe(c);
+    const mo = new MutationObserver(check);
+    mo.observe(el, { childList: true, subtree: true });
+    return () => {
+      el.removeEventListener('scroll', check);
+      ro.disconnect();
+      mo.disconnect();
+    };
+  }, []);
+  return fades;
+}
+
 function RightSidebar({ setSlot }) {
+  const scroll = useRef(null);
+  const fades = useScrollFades(scroll);
   return (
     <aside className="mr-sidebar">
-      <div className="mr-sidebar-scroll">
+      <div ref={scroll} className="mr-sidebar-scroll">
+        <FirstSteps />
         <div className="mr-sidebar-slot" ref={setSlot} />
         <div className="mr-sidebar-default">
           <PlayingAs />
-          <FirstSteps />
           <RunningTasks />
           <MrSocials />
         </div>
       </div>
+      <div className={`mr-sidebar-fade top ${fades.top ? 'on' : ''}`} aria-hidden="true" />
+      <div className={`mr-sidebar-fade bottom ${fades.bottom ? 'on' : ''}`} aria-hidden="true" />
     </aside>
   );
 }
@@ -335,7 +557,6 @@ export default function MrShell({ pages }) {
   const settingsOpen = route.page === 'settings';
   // Settings open as a window over the page you were on
   const under = settingsOpen ? [...history.stack.slice(0, history.index)].reverse().find((r) => r.page !== 'settings') || { page: 'library' } : route;
-  const withSidebar = SIDEBAR_PAGES.has(under.page);
   useEffect(() => {
     if (viewport.current) viewport.current.scrollTop = 0;
   }, [under.page, under.id, under.type]);
@@ -360,7 +581,8 @@ export default function MrShell({ pages }) {
       <div className="mr-app">
         <TitleBar />
         <NavBar />
-        <div className={`mr-contents ${withSidebar ? 'with-sidebar' : ''}`}>
+        {/* the sidebar is there on every page, as in the Modrinth app */}
+        <div className="mr-contents with-sidebar">
           <SeasonBackdrop />
           <main className="mr-viewport" ref={viewport} key={langVersion}>
             {!appState ? (
@@ -373,17 +595,23 @@ export default function MrShell({ pages }) {
               </ErrorBoundary>
             )}
           </main>
-          {withSidebar ? <RightSidebar setSlot={setSlot} /> : null}
+          <RightSidebar setSlot={setSlot} />
+          <div className="mr-contents-frame" aria-hidden="true" />
         </div>
         {settingsOpen && appState ? (
           <div className="mr-settings-backdrop" onMouseDown={(e) => e.target === e.currentTarget && app.back()}>
             <div className="mr-settings-window" role="dialog" aria-modal="true" aria-label={t('Ajustes')}>
-              <button className="mr-settings-close" onClick={app.back} aria-label={t('Cerrar')}>
-                <Icon name="x" size={20} />
-              </button>
-              <ErrorBoundary resetKey={JSON.stringify(route)}>
-                <pages.Settings key={langVersion} />
-              </ErrorBoundary>
+              <div className="mr-settings-head">
+                <h2>{t('Ajustes')}</h2>
+                <button className="mr-icon-btn mr-settings-close" onClick={app.back} aria-label={t('Cerrar')} data-tip={t('Cerrar')}>
+                  <Icon name="x" size={IC.s5} />
+                </button>
+              </div>
+              <div className="mr-settings-body">
+                <ErrorBoundary resetKey={JSON.stringify(route)}>
+                  <pages.Settings key={langVersion} />
+                </ErrorBoundary>
+              </div>
             </div>
           </div>
         ) : null}

@@ -13,10 +13,12 @@ import { call, pathForFile } from '../lib/api.js';
 import { t } from '../lib/i18n.js';
 import { formatSize } from '../lib/format.js';
 import { showInstallResult } from '../lib/actions.js';
+import { IC } from './mrsize.js';
 
 const KINDS = ['mods', 'resourcepacks', 'shaderpacks'];
 const KIND_LABEL = () => ({ mods: t('Mods'), resourcepacks: t('Resource Packs'), shaderpacks: t('Shaders'), datapacks: t('Data Packs') });
-const KIND_ICON = { mods: 'puzzle', resourcepacks: 'layers', shaderpacks: 'sun', datapacks: 'globe' };
+// Modrinth's project type icons: mod Box, resource pack Paintbrush, shader Glasses, data pack Braces
+const KIND_ICON = { mods: 'box', resourcepacks: 'paintbrush', shaderpacks: 'glasses', datapacks: 'braces' };
 const TYPE_OF = { mods: 'mod', resourcepacks: 'resourcepack', shaderpacks: 'shader', datapacks: 'datapack' };
 const keyOf = (i) => `${i.kind}|${i.fileName}`;
 
@@ -32,7 +34,7 @@ function ItemIcon({ src, kind }) {
   if (src && !broken) return <img className="mr-ct-icon" src={src} alt="" loading="lazy" onError={() => setBroken(true)} />;
   return (
     <span className="mr-ct-icon ph">
-      <Icon name={KIND_ICON[kind] || 'box'} size={22} />
+      <Icon name={KIND_ICON[kind] || 'box'} size={IC.s6} />
     </span>
   );
 }
@@ -57,6 +59,7 @@ export default function MrContent({ instance }) {
   const [dpItems, setDpItems] = useState(null);
   const [dropping, setDropping] = useState(false);
   const filterMenu = useMenu();
+  const sortMenu = useMenu();
   const rowMenu = useContextMenu();
   const loadId = useRef(0);
   const kinds = useMemo(() => KINDS.filter((k) => modded || k === 'resourcepacks' || (lists && lists[k] && lists[k].length)), [modded, lists]);
@@ -272,7 +275,6 @@ export default function MrContent({ instance }) {
       else n.delete(keyOf(i));
       return n;
     });
-  const counts = lists ? Object.fromEntries(kinds.map((k) => [k, (lists[k] || []).length])) : {};
 
   return (
     <div
@@ -293,40 +295,57 @@ export default function MrContent({ instance }) {
       }}
     >
       <div className="mr-ct-top">
-        <div className="mr-search grow">
-          <Icon name="search" size={18} />
+        <div className="mr-search medium grow">
+          <Icon name="search" size={IC.s5} />
           <input value={query} maxLength={120} placeholder={t('Buscar {n} proyectos…', { n: total })} onChange={(e) => setQuery(e.target.value)} />
+          {query ? (
+            <button className="mr-input-clear" aria-label={t('Borrar')} onClick={() => setQuery('')}>
+              <Icon name="x" size={IC.s4} />
+            </button>
+          ) : null}
         </div>
-        <button className="mr-btn" onClick={() => addFiles()}>
-          <Icon name="folderOpen" size={18} />
-          {t('Subir archivos')}
-        </button>
-        <button className="mr-btn brand" onClick={browse}>
-          <Icon name="compass" size={18} />
-          {t('Explorar contenido')}
-        </button>
+        <div className="mr-ct-buttons">
+          <button className="mr-btn lg outlined" onClick={() => addFiles()}>
+            <Icon name="folderOpen" size={IC.s5} />
+            {t('Subir archivos')}
+          </button>
+          <button className="mr-btn lg brand" onClick={browse}>
+            <Icon name="compass" size={IC.s5} />
+            {t('Explorar contenido')}
+          </button>
+        </div>
       </div>
       <div className="mr-ct-bar">
-        <span className="mr-select-wrap">
-          <Icon name="sort" size={16} />
-          <Select value={sort} onChange={setSort} options={SORTS()} className="mr-select" />
-        </span>
-        <Icon name="filter" size={18} className="mr-ct-filter-ico" />
-        <button className={`mr-pill ${filter === 'all' ? 'on' : ''}`} onClick={() => setFilter('all')}>
-          {t('Todo')}
+        {/* ContentSortMenu.vue: a 34 px button with the mode's icon */}
+        <button ref={sortMenu.anchor} className={`mr-btn mr-ct-sort ${sortMenu.open ? 'open' : ''}`} onClick={sortMenu.toggle} aria-label={t('Ordenar por')}>
+          <Icon name="sort" size={IC.s5} />
+          {(SORTS().find((x) => x.value === sort) || SORTS()[0]).label}
+          <Icon name="dropdown" size={IC.s5} className={sortMenu.open ? 'flip' : ''} />
         </button>
-        {kinds.map((k) => (
-          <button key={k} className={`mr-pill ${filter === k ? 'on' : ''}`} onClick={() => setFilter(k)}>
-            {KIND_LABEL()[k]}
-            {counts[k] ? <span className="mr-pill-count">{counts[k]}</span> : null}
-          </button>
-        ))}
-        <button className={`mr-pill ${filter === 'datapacks' ? 'on' : ''}`} onClick={() => setFilter('datapacks')}>
-          {KIND_LABEL().datapacks}
-        </button>
+        <Popover anchor={sortMenu.anchor} open={sortMenu.open} onClose={sortMenu.close} className="menu mr-pop">
+          {SORTS().map((x) => (
+            <MenuItem key={x.value} label={x.label} checked={sort === x.value} onClick={() => (sortMenu.close(), setSort(x.value))} />
+          ))}
+        </Popover>
         <span className="mr-ct-sep" />
-        <button ref={filterMenu.anchor} className={`mr-pill ghost ${state !== 'any' ? 'on' : ''}`} onClick={filterMenu.toggle}>
-          <Icon name="plus" size={15} />
+        {/* FilterPills.vue */}
+        <span className="mr-filter-pills">
+          <Icon name="filter" size={IC.s5} className="mr-ct-filter-ico" />
+          <button className={`mr-pill ${filter === 'all' ? 'on' : ''}`} onClick={() => setFilter('all')}>
+            {t('Todo')}
+          </button>
+          {kinds.map((k) => (
+            <button key={k} className={`mr-pill ${filter === k ? 'on' : ''}`} onClick={() => setFilter(k)}>
+              {KIND_LABEL()[k]}
+            </button>
+          ))}
+          <button className={`mr-pill ${filter === 'datapacks' ? 'on' : ''}`} onClick={() => setFilter('datapacks')}>
+            {KIND_LABEL().datapacks}
+          </button>
+        </span>
+        <span className="mr-ct-sep" />
+        <button ref={filterMenu.anchor} className={`mr-btn mr-ct-sort ${state !== 'any' ? 'on' : ''}`} onClick={filterMenu.toggle}>
+          <Icon name="plus" size={IC.s5} />
           {state === 'any' ? t('Filtro') : { enabled: t('Activados'), disabled: t('Desactivados'), updates: t('Con actualización') }[state]}
         </button>
         <Popover anchor={filterMenu.anchor} open={filterMenu.open} onClose={filterMenu.close} className="menu mr-pop">
@@ -342,17 +361,17 @@ export default function MrContent({ instance }) {
         </Popover>
         <span className="spacer" />
         <button className="mr-textbtn brand" disabled={!updatable.length || checking} onClick={() => updateAll()}>
-          {checking ? <Spinner size={16} /> : <Icon name="download" size={17} />}
+          {checking ? <Spinner size={IC.s5} /> : <Icon name="download" size={IC.s5} />}
           {updatable.length ? t('Actualizar todo ({n})', { n: updatable.length }) : t('Actualizar todo')}
         </button>
         <button className="mr-textbtn" onClick={() => (reload(), check(true))}>
-          <Icon name="refresh" size={17} />
+          <Icon name="refresh" size={IC.s5} />
           {t('Recargar')}
         </button>
       </div>
       {filter === 'datapacks' ? (
         <div className="mr-ct-world">
-          <Icon name="globe" size={18} />
+          <Icon name="globe" size={IC.s5} />
           <span>{t('Data packs del mundo:')}</span>
           {worlds.length ? <Select value={world} onChange={setWorld} options={worlds.map((w) => ({ value: w.folder, label: w.levelName || w.folder }))} className="mr-select" /> : <span className="muted">{t('Este perfil todavía no tiene mundos.')}</span>}
         </div>
@@ -360,22 +379,23 @@ export default function MrContent({ instance }) {
       {sel.length ? (
         <div className="mr-bulk">
           <strong>{t('{n} seleccionados', { n: sel.length })}</strong>
-          <button className="mr-btn" onClick={() => Promise.all(sel.map((i) => call('content.setEnabled', instance.id, i.kind, i.fileName, true, opts(i)))).then(reload)}>
-            <Icon name="check" size={16} />
+          <span className="mr-bulk-sep" />
+          <button className="mr-btn quiet" onClick={() => Promise.all(sel.map((i) => call('content.setEnabled', instance.id, i.kind, i.fileName, true, opts(i)))).then(reload)}>
+            <Icon name="check" size={IC.s5} />
             {t('Activar')}
           </button>
-          <button className="mr-btn" onClick={() => Promise.all(sel.map((i) => call('content.setEnabled', instance.id, i.kind, i.fileName, false, opts(i)))).then(reload)}>
-            <Icon name="eyeOff" size={16} />
+          <button className="mr-btn quiet" onClick={() => Promise.all(sel.map((i) => call('content.setEnabled', instance.id, i.kind, i.fileName, false, opts(i)))).then(reload)}>
+            <Icon name="eyeOff" size={IC.s5} />
             {t('Desactivar')}
           </button>
           {sel.some((i) => updates[keyOf(i)]) ? (
-            <button className="mr-btn" onClick={() => updateAll(sel)}>
-              <Icon name="download" size={16} />
+            <button className="mr-btn quiet" onClick={() => updateAll(sel)}>
+              <Icon name="download" size={IC.s5} />
               {t('Actualizar')}
             </button>
           ) : null}
-          <button className="mr-btn danger" onClick={() => remove(sel)}>
-            <Icon name="trash" size={16} />
+          <button className="mr-btn quiet red" onClick={() => remove(sel)}>
+            <Icon name="trash" size={IC.s5} />
             {t('Eliminar')}
           </button>
           <button className="mr-textbtn" onClick={() => setSelected(new Set())}>
@@ -398,13 +418,13 @@ export default function MrContent({ instance }) {
           </div>
         ) : !visible.length ? (
           <div className="mr-empty small">
-            <Icon name={KIND_ICON[filter] || 'puzzle'} size={34} />
+            <Icon name={KIND_ICON[filter] || 'box'} size={IC.s6 * 1.5} />
             <strong>{all.length ? t('Sin resultados') : t('No hay nada aquí todavía')}</strong>
             {!all.length ? (
               <>
                 <span>{t('Explora contenido o arrastra archivos a esta lista.')}</span>
                 <button className="mr-btn brand" onClick={browse}>
-                  <Icon name="compass" size={18} />
+                  <Icon name="compass" size={IC.s5} />
                   {t('Explorar contenido')}
                 </button>
               </>
@@ -424,42 +444,42 @@ export default function MrContent({ instance }) {
                   <ItemIcon src={iconOf(i)} kind={i.kind} />
                   <span className="mr-td-text">
                     <strong>
-                      <Icon name={KIND_ICON[i.kind]} size={14} className="mr-kind" />
-                      {i.name}
+                      <Icon name={KIND_ICON[i.kind]} size={IC.s5} className="mr-kind" />
+                      <span className="mr-td-name">{i.name}</span>
                     </strong>
                     <small>{authorOf(i) || i.baseName}</small>
                   </span>
-                  {opening === k ? <Spinner size={16} /> : null}
+                  {opening === k ? <Spinner size={IC.s4} /> : null}
                 </span>
                 <span className="mr-td-version">
                   <strong title={i.version || ''}>{i.version || (i.meta && i.meta.versionNumber) || '—'}</strong>
                   <small title={i.fileName}>{i.fileName}</small>
                   {prev ? (
                     <button className="mr-prev" onClick={() => switchVersion(i)} data-tip={t('Antes de actualizar usabas {v}. Clic para cambiar de versión.', { v: prev.versionNumber || '?' })}>
-                      <Icon name="undo" size={13} />
+                      <Icon name="undo" size={IC.s3} />
                       {t('Antes: {v}', { v: prev.versionNumber || '?' })}
                     </button>
                   ) : null}
                 </span>
                 <span className="mr-td-actions">
                   {busy.has(k) ? (
-                    <Spinner size={18} />
+                    <Spinner size={IC.s5} />
                   ) : u ? (
-                    <button className="mr-icon-btn brand" onClick={() => updateOne(i)} aria-label={t('Actualizar')} data-tip={t('Actualizar a {v}', { v: u.versionNumber || '' })}>
-                      <Icon name="download" size={18} />
+                    <button className="mr-icon-btn quiet brand-text green-hover" onClick={() => updateOne(i)} aria-label={t('Actualizar')} data-tip={t('Actualizar a {v}', { v: u.versionNumber || '' })}>
+                      <Icon name="download" size={IC.s5} />
                     </button>
                   ) : null}
                   {!i.isDir ? (
                     <button className="mr-icon-btn quiet" onClick={() => switchVersion(i)} aria-label={t('Cambiar versión')} data-tip={t('Cambiar versión')}>
-                      <Icon name="swap" size={18} />
+                      <Icon name="swap" size={IC.s5} />
                     </button>
                   ) : null}
                   <Toggle checked={i.enabled} onChange={(v) => toggle(i, v)} />
                   <button className="mr-icon-btn quiet" onClick={() => remove([i])} aria-label={t('Eliminar')} data-tip={t('Eliminar')}>
-                    <Icon name="trash" size={18} />
+                    <Icon name="trash" size={IC.s5} />
                   </button>
-                  <button className="mr-icon-btn quiet" onClick={(e) => rowMenu.show(e, i)} aria-label={t('Más opciones')}>
-                    <Icon name="more" size={18} />
+                  <button className="mr-icon-btn quiet" onClick={(e) => rowMenu.show(e, i)} aria-label={t('Más opciones')} data-tip={t('Más opciones')}>
+                    <Icon name="more" size={IC.s5} />
                   </button>
                 </span>
               </div>
@@ -481,7 +501,7 @@ export default function MrContent({ instance }) {
       ) : null}
       {dropping ? (
         <div className="drop-overlay">
-          <Icon name="import" size={44} />
+          <Icon name="import" size={IC.s6 * 2} />
           {t('Suelta los archivos para agregarlos')}
         </div>
       ) : null}

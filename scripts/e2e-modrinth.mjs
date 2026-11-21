@@ -398,9 +398,23 @@ try {
 
   if (want('account')) {
     await page.locator('.mr-navbtn[aria-label="Inicio"]').click();
+    // "Playing as" opens in place, like Modrinth's accounts card
     await page.locator('.mr-account-card').click();
-    await cap('14-account-menu', 500);
-    await page.keyboard.press('Escape');
+    await page
+      .waitForFunction(() => {
+        const list = document.querySelector('.mr-account-box.open .mr-collapse > div');
+        return list && list.getBoundingClientRect().height > 40;
+      }, null, { timeout: 5000 })
+      .catch(() => {});
+    const acc = await page.evaluate(() => {
+      const box = document.querySelector('.mr-account-box');
+      const list = box && box.querySelector('.mr-collapse > div');
+      return { open: Boolean(box && box.classList.contains('open')), rows: document.querySelectorAll('.mr-account-row').length, height: list ? Math.round(list.getBoundingClientRect().height) : 0 };
+    });
+    console.log('account card:', JSON.stringify(acc));
+    if (!acc.open || !acc.rows || acc.height < 40) throw new Error('the account card did not open');
+    await cap('14-account-menu', 300);
+    await page.locator('.mr-account-card').click();
   }
 
   if (want('switchback')) {

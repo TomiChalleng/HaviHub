@@ -1,6 +1,13 @@
 // Icons: bold ones (Material Symbols, filled or weight 600, like CurseForge's)
 // and an original line set (24x24 grid, stroke based) for the rest.
+import { createContext, useContext } from 'react';
 import { BOLD } from './icons-bold.js';
+import { MR_ICONS } from './icons-modrinth.js';
+
+// Which set the icons are drawn from: 'bold' (CurseForge layout) or
+// 'modrinth' (Lucide line icons, as the Modrinth app draws them). Set by the
+// app from the chosen layout (lib/store.jsx).
+export const IconSet = createContext('bold');
 
 const P = {
   home: <path d="M3 11.5 12 4l9 7.5M5.5 9.8V20h4.6v-5.5h3.8V20h4.6V9.8" />,
@@ -274,6 +281,28 @@ Object.assign(P, {
 });
 
 export default function Icon({ name, size = 20, stroke = 1.8, className = '', style, title }) {
+  const set = useContext(IconSet);
+  const mr = set === 'modrinth' ? MR_ICONS[name] : null;
+  if (mr) {
+    const [body, attrs] = mr;
+    return (
+      <svg
+        className={`icon ${className}`}
+        width={size}
+        height={size}
+        viewBox={(attrs && attrs.viewBox) || '0 0 24 24'}
+        fill={(attrs && attrs.fill) || 'none'}
+        stroke={(attrs && attrs.stroke) || 'currentColor'}
+        strokeWidth={(attrs && attrs['stroke-width']) || 2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={style}
+        aria-hidden={title ? undefined : 'true'}
+        role={title ? 'img' : undefined}
+        dangerouslySetInnerHTML={{ __html: (title ? `<title>${String(title).replace(/[<&]/g, (c) => (c === '<' ? '&lt;' : '&amp;'))}</title>` : '') + body }}
+      />
+    );
+  }
   const bold = BOLD[name] || (!P[name] ? BOLD.box : null);
   if (bold) {
     return (

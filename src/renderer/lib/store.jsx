@@ -6,6 +6,7 @@ import { now, setClockOffset } from './clock.js';
 import { activeSeason } from '../../shared/seasons.js';
 import { setLanguage, t } from './i18n.js';
 import { ConfirmDialog, PromptDialog } from '../components/Modal.jsx';
+import { IconSet } from '../components/Icon.jsx';
 import { capturingInput } from './inputCapture.js';
 import { setQuiet } from './quiet.js';
 import { loadMcTextures, useMcTextures } from './mc-textures.js';
@@ -448,10 +449,12 @@ export function AppProvider({ children }) {
 
   return (
     <Ctx.Provider value={value}>
-      {children}
-      {dialogs.map((d) => (
-        <d.Component key={d.id} {...d.props} />
-      ))}
+      <IconSet.Provider value={config && config.layout === 'modrinth' ? 'modrinth' : 'bold'}>
+        {children}
+        {dialogs.map((d) => (
+          <d.Component key={d.id} {...d.props} />
+        ))}
+      </IconSet.Provider>
     </Ctx.Provider>
   );
 }
